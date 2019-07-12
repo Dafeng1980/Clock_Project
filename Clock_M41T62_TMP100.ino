@@ -399,6 +399,8 @@ void setTime()
 delay(10);
 Serial.flush();
 rtc.adjust(DateTime(date, time));
+delay(10);
+Serial.println(date);
 DateTime now=rtc.now();
 x = now.dayOfWeek();
 //Serial.print("X=");
