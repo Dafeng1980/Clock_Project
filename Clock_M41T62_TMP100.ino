@@ -9,95 +9,95 @@
 #include <Wire.h>
 #include "M41T62.h"
 #include <ShiftDisplay.h>
-#define NOTE_B0  31
-#define NOTE_C1  33
-#define NOTE_CS1 35
-#define NOTE_D1  37
-#define NOTE_DS1 39
-#define NOTE_E1  41
-#define NOTE_F1  44
-#define NOTE_FS1 46
-#define NOTE_G1  49
-#define NOTE_GS1 52
-#define NOTE_A1  55
-#define NOTE_AS1 58
-#define NOTE_B1  62
-#define NOTE_C2  65
-#define NOTE_CS2 69
-#define NOTE_D2  73
-#define NOTE_DS2 78
-#define NOTE_E2  82
-#define NOTE_F2  87
-#define NOTE_FS2 93
-#define NOTE_G2  98
-#define NOTE_GS2 104
-#define NOTE_A2  110
-#define NOTE_AS2 117
-#define NOTE_B2  123
-#define NOTE_C3  131
-#define NOTE_CS3 139
-#define NOTE_D3  147
-#define NOTE_DS3 156
-#define NOTE_E3  165
-#define NOTE_F3  175
-#define NOTE_FS3 185
-#define NOTE_G3  196
-#define NOTE_GS3 208
-#define NOTE_A3  220
-#define NOTE_AS3 233
-#define NOTE_B3  247
-#define NOTE_C4  262
-#define NOTE_CS4 277
-#define NOTE_D4  294
-#define NOTE_DS4 311
-#define NOTE_E4  330
-#define NOTE_F4  349
-#define NOTE_FS4 370
-#define NOTE_G4  392
-#define NOTE_GS4 415
-#define NOTE_A4  440
-#define NOTE_AS4 466
-#define NOTE_B4  494
-#define NOTE_C5  523
-#define NOTE_CS5 554
-#define NOTE_D5  587
-#define NOTE_DS5 622
-#define NOTE_E5  659
-#define NOTE_F5  698
-#define NOTE_FS5 740
-#define NOTE_G5  784
-#define NOTE_GS5 831
-#define NOTE_A5  880
-#define NOTE_AS5 932
-#define NOTE_B5  988
-#define NOTE_C6  1047
-#define NOTE_CS6 1109
-#define NOTE_D6  1175
-#define NOTE_DS6 1245
-#define NOTE_E6  1319
-#define NOTE_F6  1397
-#define NOTE_FS6 1480
-#define NOTE_G6  1568
-#define NOTE_GS6 1661
-#define NOTE_A6  1760
-#define NOTE_AS6 1865
-#define NOTE_B6  1976
-#define NOTE_C7  2093
-#define NOTE_CS7 2217
-#define NOTE_D7  2349
-#define NOTE_DS7 2489
-#define NOTE_E7  2637
-#define NOTE_F7  2794
-#define NOTE_FS7 2960
-#define NOTE_G7  3136
-#define NOTE_GS7 3322
-#define NOTE_A7  3520
-#define NOTE_AS7 3729
-#define NOTE_B7  3951
-#define NOTE_C8  4186
-#define NOTE_CS8 4435
-#define NOTE_D8  4699
-#define NOTE_DS8 4978
+//#define NOTE_B0  31
+//#define NOTE_C1  33
+//#define NOTE_CS1 35
+//#define NOTE_D1  37
+//#define NOTE_DS1 39l
+//#define NOTE_E1  41
+//#define NOTE_F1  44
+//#define NOTE_FS1 46
+//#define NOTE_G1  49
+//#define NOTE_GS1 52
+//#define NOTE_A1  55
+//#define NOTE_AS1 58
+//#define NOTE_B1  62
+//#define NOTE_C2  65
+//#define NOTE_CS2 69
+//#define NOTE_D2  73
+//#define NOTE_DS2 78
+//#define NOTE_E2  82
+//#define NOTE_F2  87
+//#define NOTE_FS2 93
+//#define NOTE_G2  98
+//#define NOTE_GS2 104
+//#define NOTE_A2  110
+//#define NOTE_AS2 117
+//#define NOTE_B2  123
+//#define NOTE_C3  131
+//#define NOTE_CS3 139
+//#define NOTE_D3  147
+//#define NOTE_DS3 156
+//#define NOTE_E3  165
+//#define NOTE_F3  175
+//#define NOTE_FS3 185
+//#define NOTE_G3  196
+//#define NOTE_GS3 208
+//#define NOTE_A3  220
+//#define NOTE_AS3 233
+//#define NOTE_B3  247
+//#define NOTE_C4  262
+//#define NOTE_CS4 277
+//#define NOTE_D4  294
+//#define NOTE_DS4 311
+//#define NOTE_E4  330
+//#define NOTE_F4  349
+//#define NOTE_FS4 370
+//#define NOTE_G4  392
+//#define NOTE_GS4 415
+//#define NOTE_A4  440
+//#define NOTE_AS4 466
+//#define NOTE_B4  494
+//#define NOTE_C5  523
+//#define NOTE_CS5 554
+//#define NOTE_D5  587
+//#define NOTE_DS5 622
+//#define NOTE_E5  659
+//#define NOTE_F5  698
+//#define NOTE_FS5 740
+//#define NOTE_G5  784
+//#define NOTE_GS5 831
+//#define NOTE_A5  880
+//#define NOTE_AS5 932
+//#define NOTE_B5  988
+//#define NOTE_C6  1047
+//#define NOTE_CS6 1109
+//#define NOTE_D6  1175
+//#define NOTE_DS6 1245
+//#define NOTE_E6  1319
+//#define NOTE_F6  1397
+//#define NOTE_FS6 1480
+//#define NOTE_G6  1568
+//#define NOTE_GS6 1661
+//#define NOTE_A6  1760
+//#define NOTE_AS6 1865
+//#define NOTE_B6  1976
+//#define NOTE_C7  2093
+//#define NOTE_CS7 2217
+//#define NOTE_D7  2349
+//#define NOTE_DS7 2489
+//#define NOTE_E7  2637
+//#define NOTE_F7  2794
+//#define NOTE_FS7 2960
+//#define NOTE_G7  3136
+//#define NOTE_GS7 3322
+//#define NOTE_A7  3520
+//#define NOTE_AS7 3729
+//#define NOTE_B7  3951
+//#define NOTE_C8  4186
+//#define NOTE_CS8 4435
+//#define NOTE_D8  4699
+//#define NOTE_DS8 4978
 #define SIXTEENTHNOTE 1
 #define EIGHTHNOTE 2
 #define DOTTEDEIGHTNOTE 3
@@ -543,102 +543,105 @@ void playMusic(){
 	// Song goes here
 	//note(NOTE_G5, HALFNOTE);
 
-	//Measure 1
-	note(NOTE_E6, EIGHTHNOTE);
-	note(NOTE_DS6, EIGHTHNOTE);
+	////Measure 1
+	//note(NOTE_E6, EIGHTHNOTE);
+	//note(NOTE_DS6, EIGHTHNOTE);
 
-	//Measure 2
-	note(NOTE_E6, EIGHTHNOTE);
-	note(NOTE_DS6, EIGHTHNOTE);
-	note(NOTE_E6, EIGHTHNOTE);
-	note(NOTE_B5, EIGHTHNOTE);
-	note(NOTE_D6, EIGHTHNOTE);
-	note(NOTE_C6, EIGHTHNOTE);
+	////Measure 2
+	//note(NOTE_E6, EIGHTHNOTE);
+	//note(NOTE_DS6, EIGHTHNOTE);
+	//note(NOTE_E6, EIGHTHNOTE);
+	//note(NOTE_B5, EIGHTHNOTE);
+	//note(NOTE_D6, EIGHTHNOTE);
+	//note(NOTE_C6, EIGHTHNOTE);
 
-	//Measure 3
-	note(NOTE_A3, EIGHTHNOTE);
-	note(NOTE_E4, EIGHTHNOTE);
-	note(NOTE_A4, EIGHTHNOTE);
-	note(NOTE_C5, EIGHTHNOTE);
-	note(NOTE_E5, EIGHTHNOTE);
-	note(NOTE_A5, EIGHTHNOTE);
+	////Measure 3
+	//note(NOTE_A3, EIGHTHNOTE);
+	//note(NOTE_E4, EIGHTHNOTE);
+	//note(NOTE_A4, EIGHTHNOTE);
+	//note(NOTE_C5, EIGHTHNOTE);
+	//note(NOTE_E5, EIGHTHNOTE);
+	//note(NOTE_A5, EIGHTHNOTE);
 
-	//Measure 4
-	note(NOTE_E3, EIGHTHNOTE);
-	note(NOTE_E4, EIGHTHNOTE);
-	note(NOTE_GS4, EIGHTHNOTE);
-	note(NOTE_E5, EIGHTHNOTE);
-	note(NOTE_GS5, EIGHTHNOTE);
-	note(NOTE_B5, EIGHTHNOTE);
+	////Measure 4
+	//note(NOTE_E3, EIGHTHNOTE);
+	//note(NOTE_E4, EIGHTHNOTE);
+	//note(NOTE_GS4, EIGHTHNOTE);
+	//note(NOTE_E5, EIGHTHNOTE);
+	//note(NOTE_GS5, EIGHTHNOTE);
+	//note(NOTE_B5, EIGHTHNOTE);
 
-	//Measure 5
-	note(NOTE_A3, EIGHTHNOTE);
-	note(NOTE_E4, EIGHTHNOTE);
-	note(NOTE_A4, EIGHTHNOTE);
-	note(NOTE_E5, EIGHTHNOTE);
-	note(NOTE_E6, EIGHTHNOTE);
-	note(NOTE_DS6, EIGHTHNOTE);
+	////Measure 5
+	//note(NOTE_A3, EIGHTHNOTE);
+	//note(NOTE_E4, EIGHTHNOTE);
+	//note(NOTE_A4, EIGHTHNOTE);
+	//note(NOTE_E5, EIGHTHNOTE);
+	//note(NOTE_E6, EIGHTHNOTE);
+	//note(NOTE_DS6, EIGHTHNOTE);
 
-	//Measure 6
-	note(NOTE_E6, EIGHTHNOTE);
-	note(NOTE_DS6, EIGHTHNOTE);
-	note(NOTE_E6, EIGHTHNOTE);
-	note(NOTE_B5, EIGHTHNOTE);
-	note(NOTE_D6, EIGHTHNOTE);
-	note(NOTE_C6, EIGHTHNOTE);
+	////Measure 6
+	//note(NOTE_E6, EIGHTHNOTE);
+	//note(NOTE_DS6, EIGHTHNOTE);
+	//note(NOTE_E6, EIGHTHNOTE);
+	//note(NOTE_B5, EIGHTHNOTE);
+	//note(NOTE_D6, EIGHTHNOTE);
+	//note(NOTE_C6, EIGHTHNOTE);
 
-	//Measure 7
-	note(NOTE_A3, EIGHTHNOTE);
-	note(NOTE_E4, EIGHTHNOTE);
-	note(NOTE_A4, EIGHTHNOTE);
-	note(NOTE_C5, EIGHTHNOTE);
-	note(NOTE_E5, EIGHTHNOTE);
-	note(NOTE_A5, EIGHTHNOTE);
+	////Measure 7
+	//note(NOTE_A3, EIGHTHNOTE);
+	//note(NOTE_E4, EIGHTHNOTE);
+	//note(NOTE_A4, EIGHTHNOTE);
+	//note(NOTE_C5, EIGHTHNOTE);
+	//note(NOTE_E5, EIGHTHNOTE);
+	//note(NOTE_A5, EIGHTHNOTE);
 
-	//Measure 8
-	note(NOTE_E3, EIGHTHNOTE);
-	note(NOTE_E4, EIGHTHNOTE);
-	note(NOTE_GS4, EIGHTHNOTE);
-	note(NOTE_E5, EIGHTHNOTE);
-	note(NOTE_GS5, EIGHTHNOTE);
-	note(NOTE_B5, EIGHTHNOTE);
+	////Measure 8
+	//note(NOTE_E3, EIGHTHNOTE);
+	//note(NOTE_E4, EIGHTHNOTE);
+	//note(NOTE_GS4, EIGHTHNOTE);
+	//note(NOTE_E5, EIGHTHNOTE);
+	//note(NOTE_GS5, EIGHTHNOTE);
+	//note(NOTE_B5, EIGHTHNOTE);
 
-	//Measure 9
-	note(NOTE_A3, EIGHTHNOTE);
-	note(NOTE_E4, EIGHTHNOTE);
-	note(NOTE_A4, EIGHTHNOTE);
-	note(NOTE_E5, EIGHTHNOTE);
-	note(NOTE_C6, EIGHTHNOTE);
-	note(NOTE_D6, EIGHTHNOTE);
+	////Measure 9
+	//note(NOTE_A3, EIGHTHNOTE);
+	//note(NOTE_E4, EIGHTHNOTE);
+	//note(NOTE_A4, EIGHTHNOTE);
+	//note(NOTE_E5, EIGHTHNOTE);
+	//note(NOTE_C6, EIGHTHNOTE);
+	//note(NOTE_D6, EIGHTHNOTE);
 
-	//Measure 10
-	note(NOTE_C4, EIGHTHNOTE);
-	note(NOTE_G4, EIGHTHNOTE);
-	note(NOTE_C5, EIGHTHNOTE);
-	note(NOTE_G5, EIGHTHNOTE);
-	note(NOTE_F6, EIGHTHNOTE);
-	note(NOTE_E6, EIGHTHNOTE);
+	////Measure 10
+	//note(NOTE_C4, EIGHTHNOTE);
+	//note(NOTE_G4, EIGHTHNOTE);
+	//note(NOTE_C5, EIGHTHNOTE);
+	//note(NOTE_G5, EIGHTHNOTE);
+	//note(NOTE_F6, EIGHTHNOTE);
+	//note(NOTE_E6, EIGHTHNOTE);
 
-	//Measure 11
-	note(NOTE_G3, EIGHTHNOTE);
-	note(NOTE_G4, EIGHTHNOTE);
-	note(NOTE_B4, EIGHTHNOTE);
-	note(NOTE_F5, EIGHTHNOTE);
-	note(NOTE_E6, EIGHTHNOTE);
-	note(NOTE_D6, EIGHTHNOTE);
+	////Measure 11
+	//note(NOTE_G3, EIGHTHNOTE);
+	//note(NOTE_G4, EIGHTHNOTE);
+	//note(NOTE_B4, EIGHTHNOTE);
+	//note(NOTE_F5, EIGHTHNOTE);
+	//note(NOTE_E6, EIGHTHNOTE);
+	//note(NOTE_D6, EIGHTHNOTE);
 
-	//Measure 12
-	note(NOTE_A3, EIGHTHNOTE);
-	note(NOTE_E4, EIGHTHNOTE);
-	note(NOTE_A4, EIGHTHNOTE);
-	note(NOTE_E5, EIGHTHNOTE);
-	note(NOTE_D6, EIGHTHNOTE);
-	note(NOTE_C6, EIGHTHNOTE);
+	////Measure 12
+	//note(NOTE_A3, EIGHTHNOTE);
+	//note(NOTE_E4, EIGHTHNOTE);
+	//note(NOTE_A4, EIGHTHNOTE);
+	//note(NOTE_E5, EIGHTHNOTE);
+	//note(NOTE_D6, EIGHTHNOTE);
+	//note(NOTE_C6, EIGHTHNOTE);
 
-	//Measure 13
-	note(NOTE_E3, EIGHTHNOTE);
-	note(NOTE_E4, EIGHTHNOTE);
-	note(NOTE_A5, EIGHTHNOTE);
+	////Measure 13
+	//note(NOTE_E3, EIGHTHNOTE);
+	//note(NOTE_E4, EIGHTHNOTE);
+	//note(NOTE_A5, EIGHTHNOTE);
+	for (int i = 0; i < 72; i++) {
+		note(MusicReadEeprom(2 * i), EIGHTHNOTE);
+	}
 	rest(EIGHTHNOTE);
 
 
@@ -667,65 +670,69 @@ void rest(int restLength)
 	delay(delayTime);
 }
 
-void M24LC128writeByte(uint16_t data_address, uint8_t  data)
-{
-	uint8_t data_address1, data_address2;
-	data_address1 = highByte(data_address);
-	data_address2 = lowByte(data_address);
-	Wire.beginTransmission(M24LC128_ADDR);   // Initialize the Tx buffer
-	Wire.write(data_address1);                // Put slave register address in Tx buffer
-	Wire.write(data_address2);                // Put slave register address in Tx buffer
-	Wire.write(data);                         // Put data in Tx buffer
-	Wire.endTransmission();                   // Send the Tx buffer
+int MusicReadEeprom(uint16_t address) {
+	int data;
+	Wire.beginTransmission(M24LC128_ADDR);      
+	Wire.write((int)(address >> 8));        
+	Wire.write((int)(address & 0xFF));              
+	Wire.endTransmission(I2C_NOSTOP);       
+	Wire.requestFrom(M24LC128_ADDR, 2);   
+	uint8_t dataL = Wire.read();
+	uint8_t dataH = Wire.read(); 
+	data = dataH * 256 + dataL;
+	return data;                            
 }
-void M24LC128writeBytes(uint16_t data_address, uint8_t count, uint8_t * dest)
+void M24LC128writeByte(uint16_t address, uint8_t  data)
 {
-	uint8_t data_address1, data_address2;
-	data_address1 = highByte(data_address);
-	data_address2 = lowByte(data_address);
+	//  uint8_t data_address1, data_address2;
+	//  data_address1 = highByte(data_address);
+	//  data_address2 = lowByte(data_address);
+	Wire.beginTransmission(M24LC128_ADDR); 
+	Wire.write((int)(address >> 8));             
+	Wire.write((int)(address & 0xFF));                
+	Wire.write(data);                        
+	Wire.endTransmission();                   
+	delay(6);
+}
+void M24LC128writeBytes(uint16_t address, uint8_t count, uint8_t * dest)
+{
 	if (count > 64) {
 		count = 64;
-		Serial.print("Page count cannot be more than 128 bytes!");
+	//	Serial.print("Page count cannot be more than 128 bytes!");
 	}
 
-	Wire.beginTransmission(M24LC128_ADDR);   // Initialize the Tx buffer
-	Wire.write(data_address1);                // Put slave register address in Tx buffer
-	Wire.write(data_address2);                // Put slave register address in Tx buffer
+	Wire.beginTransmission(M24LC128_ADDR);   
+	Wire.write((int)(address >> 8));
+	Wire.write((int)(address & 0xFF));
 	for (uint8_t i = 0; i < count; i++) {
-		Wire.write(dest[i]);                      // Put data in Tx buffer
+		Wire.write(dest[i]);                     
 	}
-	Wire.endTransmission();                   // Send the Tx buffer
+	Wire.endTransmission();                   
 }
-uint8_t M24LC128readByte(uint16_t data_address)
+uint8_t M24LC128readByte(uint16_t address)
 {
-	uint8_t data_address1, data_address2, data;
-	data_address1 = highByte(data_address);
-	data_address2 = lowByte(data_address);
-	//uint8_t data; // `data` will store the register data	 
+	uint8_t data;
 	Wire.beginTransmission(M24LC128_ADDR);         // Initialize the Tx buffer
-	Wire.write(data_address1);                // Put slave register address in Tx buffer
-	Wire.write(data_address2);                // Put slave register address in Tx buffer
+	Wire.write((int)(address >> 8));                // Put slave register address in Tx buffer
+	Wire.write((int)(address & 0xFF));                // Put slave register address in Tx buffer
 	Wire.endTransmission(I2C_NOSTOP);        // Send the Tx buffer, but send a restart to keep connection alive
-//	Wire.endTransmission(false);             // Send the Tx buffer, but send a restart to keep connection alive
-//	Wire.requestFrom(address, 1);  // Read one byte from slave register address 
-	Wire.requestFrom(M24LC128_ADDR,1);   // Read one byte from slave register address 
+  //  Wire.endTransmission(false);             // Send the Tx buffer, but send a restart to keep connection alive
+  //  Wire.requestFrom(address, 1);  // Read one byte from slave register address 
+	Wire.requestFrom(M24LC128_ADDR, 1);   // Read one byte from slave register address 
 	data = Wire.read();                      // Fill Rx buffer with result
 	return data;                             // Return data read from slave register
 }
-void M24LC128readBytes(uint16_t data_address, int count, uint8_t * dest)
+void M24LC128readBytes(uint16_t address, int count, uint8_t * dest)
 {
-	uint8_t data_address1, data_address2;
-	data_address1 = highByte(data_address);
-	data_address2 = lowByte(data_address);
-	Wire.beginTransmission(M24LC128_ADDR);   // Initialize the Tx buffer
-	Wire.write(data_address1);                     // Put slave register address in Tx buffer
-	Wire.write(data_address2);                     // Put slave register address in Tx buffer
-	Wire.endTransmission(I2C_NOSTOP);         // Send the Tx buffer, but send a restart to keep connection alive
-//	Wire.endTransmission(false);              // Send the Tx buffer, but send a restart to keep connection alive
-	uint8_t i = 0;
+	Wire.beginTransmission(M24LC128_ADDR);      
+	Wire.write((int)(address >> 8));
+	Wire.write((int)(address & 0xFF));
+	Wire.endTransmission(I2C_NOSTOP);         
+  //  Wire.endTransmission(false);              // Send the Tx buffer, but send a restart to keep connection alive
+				uint8_t i = 0;
 	//        Wire.requestFrom(address, count);       // Read bytes from slave register address 
-	Wire.requestFrom(M24LC128_ADDR,count);  // Read bytes from slave register address 
+	Wire.requestFrom(M24LC128_ADDR, count);  // Read bytes from slave register address 
 	while (Wire.available()) {
 		dest[i++] = Wire.read();
-	}                // Put read results in the Rx buffer
+	}               // Put read results in the Rx buffer
 }
