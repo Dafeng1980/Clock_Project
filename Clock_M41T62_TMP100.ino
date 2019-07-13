@@ -107,8 +107,11 @@
 #define DOTTEDHALFNOTE 12
 #define WHOLENOTE 16
 
+#define I2C_NOSTOP 0
+
 #define speakerPin 12
 #define TMP100_ADDR  0x4A
+#define M24LC128_ADDR 0x50
 
 RTC_M41T62 rtc;
 ShiftDisplay display(COMMON_ANODE, 8);
@@ -134,11 +137,11 @@ void buttonPressInterrupt() {
 void setup()
 {
 	uint8_t k;
-#ifdef AVR
-	Wire.begin();
-#else
-	Wire1.begin(); // Shield I2C pins connect to alt I2C bus on Arduino Due
-#endif
+//#ifdef AVR
+//	Wire.begin();
+//#else
+//	Wire1.begin(); // Shield I2C pins connect to alt I2C bus on Arduino Due
+//#endif
 	pinMode(BUTTON_PIN, INPUT);
 	pinMode(speakerPin, OUTPUT);
 	pinMode(0, OUTPUT);
@@ -662,4 +665,67 @@ void rest(int restLength)
 	noTone(speakerPin);
 	float delayTime = (1000 / tempo) * (60 / 4) * restLength;
 	delay(delayTime);
+}
+
+void M24LC128writeByte(uint16_t data_address, uint8_t  data)
+{
+	uint8_t data_address1, data_address2;
+	data_address1 = highByte(data_address);
+	data_address2 = lowByte(data_address);
+	Wire.beginTransmission(M24LC128_ADDR);   // Initialize the Tx buffer
+	Wire.write(data_address1);                // Put slave register address in Tx buffer
+	Wire.write(data_address2);                // Put slave register address in Tx buffer
+	Wire.write(data);                         // Put data in Tx buffer
+	Wire.endTransmission();                   // Send the Tx buffer
+}
+void M24LC128writeBytes(uint16_t data_address, uint8_t count, uint8_t * dest)
+{
+	uint8_t data_address1, data_address2;
+	data_address1 = highByte(data_address);
+	data_address2 = lowByte(data_address);
+	if (count > 64) {
+		count = 64;
+		Serial.print("Page count cannot be more than 128 bytes!");
+	}
+
+	Wire.beginTransmission(M24LC128_ADDR);   // Initialize the Tx buffer
+	Wire.write(data_address1);                // Put slave register address in Tx buffer
+	Wire.write(data_address2);                // Put slave register address in Tx buffer
+	for (uint8_t i = 0; i < count; i++) {
+		Wire.write(dest[i]);                      // Put data in Tx buffer
+	}
+	Wire.endTransmission();                   // Send the Tx buffer
+}
+uint8_t M24LC128readByte(uint16_t data_address)
+{
+	uint8_t data_address1, data_address2, data;
+	data_address1 = highByte(data_address);
+	data_address2 = lowByte(data_address);
+	//uint8_t data; // `data` will store the register data	 
+	Wire.beginTransmission(M24LC128_ADDR);         // Initialize the Tx buffer
+	Wire.write(data_address1);                // Put slave register address in Tx buffer
+	Wire.write(data_address2);                // Put slave register address in Tx buffer
+	Wire.endTransmission(I2C_NOSTOP);        // Send the Tx buffer, but send a restart to keep connection alive
+//	Wire.endTransmission(false);             // Send the Tx buffer, but send a restart to keep connection alive
+//	Wire.requestFrom(address, 1);  // Read one byte from slave register address 
+	Wire.requestFrom(M24LC128_ADDR,1);   // Read one byte from slave register address 
+	data = Wire.read();                      // Fill Rx buffer with result
+	return data;                             // Return data read from slave register
+}
+void M24LC128readBytes(uint16_t data_address, int count, uint8_t * dest)
+{
+	uint8_t data_address1, data_address2;
+	data_address1 = highByte(data_address);
+	data_address2 = lowByte(data_address);
+	Wire.beginTransmission(M24LC128_ADDR);   // Initialize the Tx buffer
+	Wire.write(data_address1);                     // Put slave register address in Tx buffer
+	Wire.write(data_address2);                     // Put slave register address in Tx buffer
+	Wire.endTransmission(I2C_NOSTOP);         // Send the Tx buffer, but send a restart to keep connection alive
+//	Wire.endTransmission(false);              // Send the Tx buffer, but send a restart to keep connection alive
+	uint8_t i = 0;
+	//        Wire.requestFrom(address, count);       // Read bytes from slave register address 
+	Wire.requestFrom(M24LC128_ADDR,count);  // Read bytes from slave register address 
+	while (Wire.available()) {
+		dest[i++] = Wire.read();
+	}                // Put read results in the Rx buffer
 }
