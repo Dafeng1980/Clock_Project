@@ -112,20 +112,21 @@
 #define speakerPin 12
 #define TMP100_ADDR  0x4A
 #define M24LC128_ADDR 0x50
-
+#define BATTERY_PIN   A0 
 RTC_M41T62 rtc;
 ShiftDisplay display(COMMON_ANODE, 8);
 
 int tempo = 120;
+
 volatile bool buttonPressed;
 volatile int key;
 
 const int BUTTON_PIN = 2;
+const int EXTPOWER_PIN = 4;
 char dateString[31];
-//char timeString[20];
 char tempString[5];
 int st, n;
-
+int batteryval;
 
 
 void buttonPressInterrupt() {
@@ -143,9 +144,11 @@ void setup()
 //	Wire1.begin(); // Shield I2C pins connect to alt I2C bus on Arduino Due
 //#endif
 	pinMode(BUTTON_PIN, INPUT);
+	pinMode(EXTPOWER_PIN, INPUT);
 	pinMode(speakerPin, OUTPUT);
 	pinMode(0, OUTPUT);
 	// attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), buttonPressInterrupt, FALLING);
+	analogReference(INTERNAL1V1);
 	buttonPressed = false;
 
 	Serial.begin(38400);
@@ -166,7 +169,9 @@ void setup()
 	Serial.println("");
 	Serial.println(F("Choose a menu item:"));
 	Serial.println(F("-------------------"));
-
+	batteryval = analogRead(BATTERY_PIN);
+	Serial.print("BATTER_VAL:=");
+	Serial.println(batteryval);
 	ledlight();
 
 	if (Serial.available() > 0)
@@ -206,6 +211,10 @@ void setup()
 	displayAll();
 	key = 0;
 	n = 0;
+
+	int extp = digitalRead(EXTPOWER_PIN);
+	Serial.print(F("EXTPOWER_PIN:="));
+	Serial.println(extp);
 }
 
 
@@ -242,28 +251,18 @@ void loop()
 		break;
 	}
 
-	if (n == 900)
+	if (n == 600)
 	{
-		//displayTemp();
 		displayAll();
 		n = 0;
 		attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), buttonPressInterrupt, FALLING);
 		delay(10);
 		sleep();
-		//if (st == 5)
-		//{
-		//	n = 0;
-		//	st = 0;
-		//	attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), buttonPressInterrupt, FALLING);
-		//	delay(10);
-		//	sleep();
-		//}
-		//st++;
-		//n = 0;
-
 	}
 	n++;
 	checkButton();
+	//Serial.print("n:=");
+	//Serial.println(n);
 }
 
 void initTmp100() {
@@ -295,10 +294,11 @@ void displayTime() {
 	if (!((n+1)%36)) {
 
 		displayTemp();
-
+		if (digitalRead(EXTPOWER_PIN)) {
+			n = 0;
+		}
 	}
 }
-
 void displayTimeA() {
 	uint8_t dow;
 	DateTime now = rtc.now();
@@ -318,15 +318,58 @@ void displayTimeA() {
 	display.setDot(4, false);
 	display.setDot(5, false);
 	display.show(500);
+	if (digitalRead(EXTPOWER_PIN)) {
+		n = 0;
+	}
 }
-
 void displayDateA() {
 	DateTime now = rtc.now();
 	sprintf(dateString, "%02u-%02u d%01u", now.month(), now.day(),now.dayOfWeek());
 	display.set(dateString);
 	display.show(2000);
+	if (digitalRead(EXTPOWER_PIN)) {
+		n = 0;
+	}
 }
+void displayTemp() {
+	uint8_t data[2];
+	Wire.beginTransmission(TMP100_ADDR);
+	Wire.write(0x01);
+	Wire.endTransmission();
+	Wire.requestFrom(TMP100_ADDR, 1);
+	uint8_t cros = Wire.read();
+	bitWrite(cros, 6, 1);               //One-shot Temperature
 
+	Wire.beginTransmission(TMP100_ADDR);
+	Wire.write(0x01);
+	Wire.write(cros);
+	Wire.endTransmission();
+	delay(320);
+
+	Wire.beginTransmission(TMP100_ADDR);
+	Wire.write(0X00);
+	Wire.endTransmission();
+	Wire.requestFrom(TMP100_ADDR, 2);
+
+	if (Wire.available() == 2) {
+		data[0] = Wire.read();
+		data[1] = Wire.read();
+	}
+	int temp1 = ((data[0] * 256) + data[1]) / 16;      // (msb << 8 |lsb) >> 4;
+	if (temp1 >= 2048) {
+		temp1 -= 4096;
+	}
+	int dot = (temp1 & 0x00F)*0.625;
+	int fTemp = temp1 * 0.0625;
+	sprintf(tempString, "%02u#%01uC", fTemp, dot);
+	display.show(tempString, 3000, ALIGN_CENTER);
+	String Null = "        ";
+	display.set(Null);
+	display.show();
+	if (digitalRead(EXTPOWER_PIN)) {
+		n = 0;
+	}
+}
 void displayAll() {
 	uint8_t data[2];
 	Wire.beginTransmission(TMP100_ADDR);
@@ -358,7 +401,7 @@ void displayAll() {
 	int dot = (temp1 & 0x00F)*0.625;
 	int fTemp = temp1 * 0.0625;
 	DateTime time = rtc.now();
-	display.show(100);
+	// display.show(100);
 	// buttonPressed = false;
 	sprintf(dateString, " %4u-%02u-%02u d%1u  %02u-%02u-%02u  %02u#%01uC ", time.year(), time.month(), time.day(), time.dayOfWeek(), time.hour(),  time.minute(), time.second(),fTemp, dot);
 	//sprintf(timeString, " %02u %02u %02u ", time.hour(), time.minute(), time.second());
@@ -415,7 +458,6 @@ Wire.endTransmission();
 
 Serial.println(F("Set Successful"));
 }
-
 void setAlarmTime() {
 	uint8_t x, y;
 	uint8_t sec, min, hour, day, month, mode;
@@ -455,56 +497,20 @@ void setAlarmTime() {
 	// rtc.alarmEnable(1);
 }
 
-void displayDate()
-{
-	DateTime time = rtc.now();
-	display.show(100);
-	buttonPressed = false;
-	sprintf(dateString, " %4u-%02u-%02u ", time.year(), time.month(), time.day());
-	String condition = dateString;
-	condition = "        " + condition;
-	while (condition.length() > 0) {
-		display.show(condition, 650, ALIGN_LEFT);
-		condition.remove(0, 1);
-	}
-}
+//void displayDate()
+//{
+//	DateTime time = rtc.now();
+//	display.show(100);
+//	buttonPressed = false;
+//	sprintf(dateString, " %4u-%02u-%02u ", time.year(), time.month(), time.day());
+//	String condition = dateString;
+//	condition = "        " + condition;
+//	while (condition.length() > 0) {
+//		display.show(condition, 650, ALIGN_LEFT);
+//		condition.remove(0, 1);
+//	}
+//}
 
-void displayTemp() {
-	uint8_t data[2];
-	Wire.beginTransmission(TMP100_ADDR);
-	Wire.write(0x01);
-	Wire.endTransmission();	
-    Wire.requestFrom(TMP100_ADDR, 1);
-    uint8_t cros = Wire.read();
-	bitWrite(cros, 6, 1);               //One-shot Temperature
-	
-	Wire.beginTransmission(TMP100_ADDR);
-    Wire.write(0x01);
-	Wire.write(cros);
-	Wire.endTransmission();
-	delay(320);
-
-	Wire.beginTransmission(TMP100_ADDR);
-	Wire.write(0X00);
-	Wire.endTransmission();
-	Wire.requestFrom(TMP100_ADDR, 2);
-
-	if (Wire.available() == 2) {
-		data[0] = Wire.read();
-		data[1] = Wire.read();
-	}
-	int temp1 = ((data[0] * 256) + data[1]) / 16;      // (msb << 8 |lsb) >> 4;
-	if (temp1 >= 2048) {
-		temp1 -= 4096;
-	}
-	int dot = (temp1 & 0x00F)*0.625;
-	int fTemp = temp1 * 0.0625;
-	sprintf(tempString, "%02u#%01uC", fTemp, dot);
-	display.show(tempString, 3000, ALIGN_CENTER);
-	String Null = "        ";
-	display.set(Null);
-	display.show();
-}
 
 void checkButton() {
 	
@@ -512,16 +518,12 @@ void checkButton() {
 		delay(10);
 		if (digitalRead(BUTTON_PIN) == 0);
 		{
-			//rtc.printAllBits();
 			if (rtc.checkFlags()) {
 
 				//rtc.printAllBits();
 				// delay(50);
 				//attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), buttonPressInterrupt, FALLING);
-
 				playMusic();
-				// rtc.alarmEnable(1);
-				//detachInterrupt(digitalPinToInterrupt(BUTTON_PIN));
 				key = 0;
 			}
 			else
@@ -539,6 +541,7 @@ void ledlight() {
 
 	}
  }
+
 void playMusic(){
 	// Song goes here
 	//note(NOTE_G5, HALFNOTE);
@@ -684,9 +687,6 @@ int MusicReadEeprom(uint16_t address) {
 }
 void M24LC128writeByte(uint16_t address, uint8_t  data)
 {
-	//  uint8_t data_address1, data_address2;
-	//  data_address1 = highByte(data_address);
-	//  data_address2 = lowByte(data_address);
 	Wire.beginTransmission(M24LC128_ADDR); 
 	Wire.write((int)(address >> 8));             
 	Wire.write((int)(address & 0xFF));                
