@@ -202,12 +202,11 @@ void setup()
 		Serial.flush();
 	}
 	
-	// rtc.alarmRepeat(4);  // set alarm repeat mode (once per year)
+	// rtc.alarmRepeat(4);  // set alarm repeat mode (once per Day)
 	Serial.print(F("Repeat Mode Set: "));
 	Serial.println(rtc.alarmRepeat());
 	rtc.alarmEnable(1);
 	rtc.printAllBits();
-	//displayDate();
 	displayAll();
 	key = 0;
 	n = 0;
@@ -222,11 +221,9 @@ void loop()
 {
 	if (buttonPressed) {
 		detachInterrupt(digitalPinToInterrupt(BUTTON_PIN));
-		//displayDate();
 		displayAll();
 		key = 0;
 		n = 0;
-		/*Serial.println(F("bottonPressed ture"));*/
 		buttonPressed = false;
 	}
 	switch (key)
@@ -242,7 +239,6 @@ void loop()
 		break;
 	case 3 :
 		displayTemp();
-		//key = 0;
 		break;
 	case 4 :
 		displayAll();
@@ -251,7 +247,7 @@ void loop()
 		break;
 	}
 
-	if (n == 600)
+	if (n == 900)
 	{
 		displayAll();
 		n = 0;
@@ -543,112 +539,10 @@ void ledlight() {
  }
 
 void playMusic(){
-	// Song goes here
-	//note(NOTE_G5, HALFNOTE);
-
-	////Measure 1
-	//note(NOTE_E6, EIGHTHNOTE);
-	//note(NOTE_DS6, EIGHTHNOTE);
-
-	////Measure 2
-	//note(NOTE_E6, EIGHTHNOTE);
-	//note(NOTE_DS6, EIGHTHNOTE);
-	//note(NOTE_E6, EIGHTHNOTE);
-	//note(NOTE_B5, EIGHTHNOTE);
-	//note(NOTE_D6, EIGHTHNOTE);
-	//note(NOTE_C6, EIGHTHNOTE);
-
-	////Measure 3
-	//note(NOTE_A3, EIGHTHNOTE);
-	//note(NOTE_E4, EIGHTHNOTE);
-	//note(NOTE_A4, EIGHTHNOTE);
-	//note(NOTE_C5, EIGHTHNOTE);
-	//note(NOTE_E5, EIGHTHNOTE);
-	//note(NOTE_A5, EIGHTHNOTE);
-
-	////Measure 4
-	//note(NOTE_E3, EIGHTHNOTE);
-	//note(NOTE_E4, EIGHTHNOTE);
-	//note(NOTE_GS4, EIGHTHNOTE);
-	//note(NOTE_E5, EIGHTHNOTE);
-	//note(NOTE_GS5, EIGHTHNOTE);
-	//note(NOTE_B5, EIGHTHNOTE);
-
-	////Measure 5
-	//note(NOTE_A3, EIGHTHNOTE);
-	//note(NOTE_E4, EIGHTHNOTE);
-	//note(NOTE_A4, EIGHTHNOTE);
-	//note(NOTE_E5, EIGHTHNOTE);
-	//note(NOTE_E6, EIGHTHNOTE);
-	//note(NOTE_DS6, EIGHTHNOTE);
-
-	////Measure 6
-	//note(NOTE_E6, EIGHTHNOTE);
-	//note(NOTE_DS6, EIGHTHNOTE);
-	//note(NOTE_E6, EIGHTHNOTE);
-	//note(NOTE_B5, EIGHTHNOTE);
-	//note(NOTE_D6, EIGHTHNOTE);
-	//note(NOTE_C6, EIGHTHNOTE);
-
-	////Measure 7
-	//note(NOTE_A3, EIGHTHNOTE);
-	//note(NOTE_E4, EIGHTHNOTE);
-	//note(NOTE_A4, EIGHTHNOTE);
-	//note(NOTE_C5, EIGHTHNOTE);
-	//note(NOTE_E5, EIGHTHNOTE);
-	//note(NOTE_A5, EIGHTHNOTE);
-
-	////Measure 8
-	//note(NOTE_E3, EIGHTHNOTE);
-	//note(NOTE_E4, EIGHTHNOTE);
-	//note(NOTE_GS4, EIGHTHNOTE);
-	//note(NOTE_E5, EIGHTHNOTE);
-	//note(NOTE_GS5, EIGHTHNOTE);
-	//note(NOTE_B5, EIGHTHNOTE);
-
-	////Measure 9
-	//note(NOTE_A3, EIGHTHNOTE);
-	//note(NOTE_E4, EIGHTHNOTE);
-	//note(NOTE_A4, EIGHTHNOTE);
-	//note(NOTE_E5, EIGHTHNOTE);
-	//note(NOTE_C6, EIGHTHNOTE);
-	//note(NOTE_D6, EIGHTHNOTE);
-
-	////Measure 10
-	//note(NOTE_C4, EIGHTHNOTE);
-	//note(NOTE_G4, EIGHTHNOTE);
-	//note(NOTE_C5, EIGHTHNOTE);
-	//note(NOTE_G5, EIGHTHNOTE);
-	//note(NOTE_F6, EIGHTHNOTE);
-	//note(NOTE_E6, EIGHTHNOTE);
-
-	////Measure 11
-	//note(NOTE_G3, EIGHTHNOTE);
-	//note(NOTE_G4, EIGHTHNOTE);
-	//note(NOTE_B4, EIGHTHNOTE);
-	//note(NOTE_F5, EIGHTHNOTE);
-	//note(NOTE_E6, EIGHTHNOTE);
-	//note(NOTE_D6, EIGHTHNOTE);
-
-	////Measure 12
-	//note(NOTE_A3, EIGHTHNOTE);
-	//note(NOTE_E4, EIGHTHNOTE);
-	//note(NOTE_A4, EIGHTHNOTE);
-	//note(NOTE_E5, EIGHTHNOTE);
-	//note(NOTE_D6, EIGHTHNOTE);
-	//note(NOTE_C6, EIGHTHNOTE);
-
-	////Measure 13
-	//note(NOTE_E3, EIGHTHNOTE);
-	//note(NOTE_E4, EIGHTHNOTE);
-	//note(NOTE_A5, EIGHTHNOTE);
 	for (int i = 0; i < 72; i++) {
 		note(MusicReadEeprom(2 * i), EIGHTHNOTE);
 	}
 	rest(EIGHTHNOTE);
-
-
-
 	/////// KEEP ALL CODE BELOW UNCHANGED, CHANGE VARS ABOVE ////////
 	noTone(speakerPin);
 }
@@ -698,7 +592,7 @@ void M24LC128writeBytes(uint16_t address, uint8_t count, uint8_t * dest)
 {
 	if (count > 64) {
 		count = 64;
-	//	Serial.print("Page count cannot be more than 128 bytes!");
+	//	Serial.print("Page count cannot be more than 64 bytes!");
 	}
 
 	Wire.beginTransmission(M24LC128_ADDR);   
@@ -712,15 +606,13 @@ void M24LC128writeBytes(uint16_t address, uint8_t count, uint8_t * dest)
 uint8_t M24LC128readByte(uint16_t address)
 {
 	uint8_t data;
-	Wire.beginTransmission(M24LC128_ADDR);         // Initialize the Tx buffer
-	Wire.write((int)(address >> 8));                // Put slave register address in Tx buffer
-	Wire.write((int)(address & 0xFF));                // Put slave register address in Tx buffer
-	Wire.endTransmission(I2C_NOSTOP);        // Send the Tx buffer, but send a restart to keep connection alive
-  //  Wire.endTransmission(false);             // Send the Tx buffer, but send a restart to keep connection alive
-  //  Wire.requestFrom(address, 1);  // Read one byte from slave register address 
-	Wire.requestFrom(M24LC128_ADDR, 1);   // Read one byte from slave register address 
-	data = Wire.read();                      // Fill Rx buffer with result
-	return data;                             // Return data read from slave register
+	Wire.beginTransmission(M24LC128_ADDR);       
+	Wire.write((int)(address >> 8));               
+	Wire.write((int)(address & 0xFF));                
+	Wire.endTransmission(I2C_NOSTOP);        
+	Wire.requestFrom(M24LC128_ADDR, 1);   
+	data = Wire.read();                      
+	return data;                             
 }
 void M24LC128readBytes(uint16_t address, int count, uint8_t * dest)
 {
@@ -728,11 +620,9 @@ void M24LC128readBytes(uint16_t address, int count, uint8_t * dest)
 	Wire.write((int)(address >> 8));
 	Wire.write((int)(address & 0xFF));
 	Wire.endTransmission(I2C_NOSTOP);         
-  //  Wire.endTransmission(false);              // Send the Tx buffer, but send a restart to keep connection alive
-				uint8_t i = 0;
-	//        Wire.requestFrom(address, count);       // Read bytes from slave register address 
-	Wire.requestFrom(M24LC128_ADDR, count);  // Read bytes from slave register address 
+	uint8_t i = 0;
+	Wire.requestFrom(M24LC128_ADDR, count);
 	while (Wire.available()) {
 		dest[i++] = Wire.read();
-	}               // Put read results in the Rx buffer
+	}              
 }
