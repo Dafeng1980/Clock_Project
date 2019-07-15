@@ -9,95 +9,7 @@
 #include <Wire.h>
 #include "M41T62.h"
 #include <ShiftDisplay.h>
-//#define NOTE_B0  31
-//#define NOTE_C1  33
-//#define NOTE_CS1 35
-//#define NOTE_D1  37
-//#define NOTE_DS1 39l
-//#define NOTE_E1  41
-//#define NOTE_F1  44
-//#define NOTE_FS1 46
-//#define NOTE_G1  49
-//#define NOTE_GS1 52
-//#define NOTE_A1  55
-//#define NOTE_AS1 58
-//#define NOTE_B1  62
-//#define NOTE_C2  65
-//#define NOTE_CS2 69
-//#define NOTE_D2  73
-//#define NOTE_DS2 78
-//#define NOTE_E2  82
-//#define NOTE_F2  87
-//#define NOTE_FS2 93
-//#define NOTE_G2  98
-//#define NOTE_GS2 104
-//#define NOTE_A2  110
-//#define NOTE_AS2 117
-//#define NOTE_B2  123
-//#define NOTE_C3  131
-//#define NOTE_CS3 139
-//#define NOTE_D3  147
-//#define NOTE_DS3 156
-//#define NOTE_E3  165
-//#define NOTE_F3  175
-//#define NOTE_FS3 185
-//#define NOTE_G3  196
-//#define NOTE_GS3 208
-//#define NOTE_A3  220
-//#define NOTE_AS3 233
-//#define NOTE_B3  247
-//#define NOTE_C4  262
-//#define NOTE_CS4 277
-//#define NOTE_D4  294
-//#define NOTE_DS4 311
-//#define NOTE_E4  330
-//#define NOTE_F4  349
-//#define NOTE_FS4 370
-//#define NOTE_G4  392
-//#define NOTE_GS4 415
-//#define NOTE_A4  440
-//#define NOTE_AS4 466
-//#define NOTE_B4  494
-//#define NOTE_C5  523
-//#define NOTE_CS5 554
-//#define NOTE_D5  587
-//#define NOTE_DS5 622
-//#define NOTE_E5  659
-//#define NOTE_F5  698
-//#define NOTE_FS5 740
-//#define NOTE_G5  784
-//#define NOTE_GS5 831
-//#define NOTE_A5  880
-//#define NOTE_AS5 932
-//#define NOTE_B5  988
-//#define NOTE_C6  1047
-//#define NOTE_CS6 1109
-//#define NOTE_D6  1175
-//#define NOTE_DS6 1245
-//#define NOTE_E6  1319
-//#define NOTE_F6  1397
-//#define NOTE_FS6 1480
-//#define NOTE_G6  1568
-//#define NOTE_GS6 1661
-//#define NOTE_A6  1760
-//#define NOTE_AS6 1865
-//#define NOTE_B6  1976
-//#define NOTE_C7  2093
-//#define NOTE_CS7 2217
-//#define NOTE_D7  2349
-//#define NOTE_DS7 2489
-//#define NOTE_E7  2637
-//#define NOTE_F7  2794
-//#define NOTE_FS7 2960
-//#define NOTE_G7  3136
-//#define NOTE_GS7 3322
-//#define NOTE_A7  3520
-//#define NOTE_AS7 3729
-//#define NOTE_B7  3951
-//#define NOTE_C8  4186
-//#define NOTE_CS8 4435
-//#define NOTE_D8  4699
-//#define NOTE_DS8 4978
+
 #define SIXTEENTHNOTE 1
 #define EIGHTHNOTE 2
 #define DOTTEDEIGHTNOTE 3
@@ -169,8 +81,11 @@ void setup()
 	Serial.println("");
 	Serial.println(F("Choose a menu item:"));
 	Serial.println(F("-------------------"));
-	batteryval = analogRead(BATTERY_PIN);
+	batteryval = getBatteryVal();
 	Serial.print("BATTER_VAL:=");
+	Serial.println(batteryval);
+	batteryval = map(batteryval,756, 978, 2, 100);
+	Serial.print("BATTER_VAL(%):=");
 	Serial.println(batteryval);
 	ledlight();
 
@@ -257,8 +172,8 @@ void loop()
 	}
 	n++;
 	checkButton();
-	//Serial.print("n:=");
-	//Serial.println(n);
+	Serial.print("n:=");
+	Serial.println(n);
 }
 
 void initTmp100() {
@@ -396,14 +311,15 @@ void displayAll() {
 	}
 	int dot = (temp1 & 0x00F)*0.625;
 	int fTemp = temp1 * 0.0625;
-	DateTime time = rtc.now();
-	// display.show(100);
-	// buttonPressed = false;
-	sprintf(dateString, " %4u-%02u-%02u d%1u  %02u-%02u-%02u  %02u#%01uC ", time.year(), time.month(), time.day(), time.dayOfWeek(), time.hour(),  time.minute(), time.second(),fTemp, dot);
-	//sprintf(timeString, " %02u %02u %02u ", time.hour(), time.minute(), time.second());
-	String condition = dateString;
 
+	batteryval = getBatteryVal();
+	batteryval = map(batteryval, 756, 978, 2, 100);
+	DateTime time = rtc.now();
+	sprintf(dateString, " %4u-%02u-%02u d%1u %02u_%02u  %2u#%1uC P%2u ", time.year(), time.month(), time.day(), time.dayOfWeek(), time.hour(), time.minute(),fTemp, dot, batteryval);
+
+	String condition = dateString;
 	condition = "        " + condition;
+
 	while (condition.length() > 0) {
 		display.show(condition, 650, ALIGN_LEFT);
 		condition.remove(0, 1);
@@ -518,12 +434,12 @@ void checkButton() {
 
 				//rtc.printAllBits();
 				// delay(50);
-				//attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), buttonPressInterrupt, FALLING);
 				playMusic();
 				key = 0;
 			}
 			else
 			key++;
+			n = 0;
 		}
 	}
 	
@@ -537,6 +453,16 @@ void ledlight() {
 
 	}
  }
+
+int getBatteryVal() {
+	 int sum=0;
+	for (int i = 0; i < 5; i++) {
+		sum+= analogRead(BATTERY_PIN);
+		//Serial.print("Sum:=");
+		//Serial.println(sum);
+	}
+	return sum = sum / 5;
+}
 
 void playMusic(){
 	for (int i = 0; i < 72; i++) {
