@@ -116,7 +116,7 @@
   </ImportGroup>
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties arduino.upload.port="COM3" />
+      <UserProperties custom_MightyCore_644_BOD="disabled" arduino.upload.port="COM3" />
     </VisualStudio>
   </ProjectExtensions>
 </Project>

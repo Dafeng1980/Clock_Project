@@ -21,23 +21,24 @@
 
 #define I2C_NOSTOP 0
 
-#define speakerPin 12
-#define TMP100_ADDR  0x4A
-#define M24LC128_ADDR 0x50
-#define BATTERY_PIN   A0 
 RTC_M41T62 rtc;
-ShiftDisplay display(COMMON_ANODE, 8);
-
-int tempo = 120;
+ShiftDisplay display(14, 15, 13, COMMON_ANODE, 8);
 
 volatile bool buttonPressed;
 volatile int key;
 
-const int BUTTON_PIN = 2;
-const int EXTPOWER_PIN = 4;
+const int kTempo = 120;
+const int kM24lc128Addr = 0x50;
+const int kTmp100Addr = 0x4A;
+const int kButtonPin = 2;
+const int kExtPowerPin = 4;
+const int kSpeakerPin = 12;
+const int kBatteryPin = A7;
+
+
 char dateString[31];
 char tempString[5];
-int st, n;
+int n;
 int batteryval;
 
 
@@ -55,11 +56,11 @@ void setup()
 //#else
 //	Wire1.begin(); // Shield I2C pins connect to alt I2C bus on Arduino Due
 //#endif
-	pinMode(BUTTON_PIN, INPUT);
-	pinMode(EXTPOWER_PIN, INPUT);
-	pinMode(speakerPin, OUTPUT);
+	pinMode(kButtonPin, INPUT);
+	pinMode(kExtPowerPin, INPUT);
+	pinMode(kSpeakerPin, OUTPUT);
 	pinMode(0, OUTPUT);
-	// attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), buttonPressInterrupt, FALLING);
+	// attachInterrupt(digitalPinToInterrupt(kButtonPin), buttonPressInterrupt, FALLING);
 	analogReference(INTERNAL1V1);
 	buttonPressed = false;
 
@@ -67,12 +68,11 @@ void setup()
 	rtc.begin();
 	rtc.checkFlags();
 	// rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-	initTmp100();
-	// delay(50);
+	InitTmp100();
 	sleepMode(SLEEP_POWER_DOWN);
 	
 
-	printTime();
+	PrintTime();
 	Serial.println("");
 	// Serial.println(F("S [S]tart"));
 	// Serial.println(F("P sto[P]"));
@@ -81,13 +81,13 @@ void setup()
 	Serial.println("");
 	Serial.println(F("Choose a menu item:"));
 	Serial.println(F("-------------------"));
-	batteryval = getBatteryVal();
+	batteryval = getbatteryval();
 	Serial.print("BATTER_VAL:=");
 	Serial.println(batteryval);
 	batteryval = map(batteryval,756, 978, 2, 100);
 	Serial.print("BATTER_VAL(%):=");
 	Serial.println(batteryval);
-	ledlight();
+	LedLight();
 
 	if (Serial.available() > 0)
 	{
@@ -105,11 +105,11 @@ void setup()
 		//	break;
 		case 'T':
 		case 't':
-			setTime();
+			SetTime();
 			break;
 		case 'A':
 		case 'a':
-			setAlarmTime();
+			SetAlarmTime();
 		default:
 			break;
 		}
@@ -122,12 +122,12 @@ void setup()
 	Serial.println(rtc.alarmRepeat());
 	rtc.alarmEnable(1);
 	rtc.printAllBits();
-	displayAll();
+	DisplayAll();
 	key = 0;
 	n = 0;
 
-	int extp = digitalRead(EXTPOWER_PIN);
-	Serial.print(F("EXTPOWER_PIN:="));
+	int extp = digitalRead(kExtPowerPin);
+	Serial.print(F("kExtPowerPin:="));
 	Serial.println(extp);
 }
 
@@ -135,8 +135,8 @@ void setup()
 void loop()
 {
 	if (buttonPressed) {
-		detachInterrupt(digitalPinToInterrupt(BUTTON_PIN));
-		displayAll();
+		detachInterrupt(digitalPinToInterrupt(kButtonPin));
+		DisplayAll();
 		key = 0;
 		n = 0;
 		buttonPressed = false;
@@ -144,46 +144,46 @@ void loop()
 	switch (key)
 	{
 	case 0 :
-		displayTime();
+		DisplayTime();
 			break;
 	case 1 :
-		displayTimeA();
+		DisplayTimeA();
 		break;
 	case 2 :
-		displayDateA();
+		DisplayDate();
 		break;
 	case 3 :
-		displayTemp();
+		DisplayTemp();
 		break;
 	case 4 :
-		displayAll();
+		DisplayAll();
 	default:
 		key = 0;
 		break;
 	}
 
-	if (n == 900)
+	if (n == 600)
 	{
-		displayAll();
+		DisplayAll();
 		n = 0;
-		attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), buttonPressInterrupt, FALLING);
+		attachInterrupt(digitalPinToInterrupt(kButtonPin), buttonPressInterrupt, FALLING);
 		delay(10);
 		sleep();
 	}
 	n++;
-	checkButton();
-	Serial.print("n:=");
-	Serial.println(n);
+	CheckButton();
+	//Serial.print("n:=");
+	//Serial.println(n);
 }
 
-void initTmp100() {
-	Wire.beginTransmission(TMP100_ADDR);
+void InitTmp100() {
+	Wire.beginTransmission(kTmp100Addr);
 	Wire.write(0x01);
 	Wire.write(0x31);  // 12 bits Resolution(320ms); in Shutdown Mode
 	Wire.endTransmission();
 }
 
-void displayTime() {
+void DisplayTime() {
 	DateTime now = rtc.now();
 	sprintf(dateString, "%02u %02u %02u", now.hour(), now.minute(), now.second());
 	display.set(dateString);
@@ -204,13 +204,13 @@ void displayTime() {
 
 	if (!((n+1)%36)) {
 
-		displayTemp();
-		if (digitalRead(EXTPOWER_PIN)) {
+		DisplayTemp();
+		if (digitalRead(kExtPowerPin)) {
 			n = 0;
 		}
 	}
 }
-void displayTimeA() {
+void DisplayTimeA() {
 	uint8_t dow;
 	DateTime now = rtc.now();
 	sprintf(dateString, "%02u d%01u %02u", now.hour(), now.dayOfWeek(), now.minute());
@@ -229,38 +229,38 @@ void displayTimeA() {
 	display.setDot(4, false);
 	display.setDot(5, false);
 	display.show(500);
-	if (digitalRead(EXTPOWER_PIN)) {
+	if (digitalRead(kExtPowerPin)) {
 		n = 0;
 	}
 }
-void displayDateA() {
+void DisplayDate() {
 	DateTime now = rtc.now();
-	sprintf(dateString, "%02u-%02u d%01u", now.month(), now.day(),now.dayOfWeek());
+	sprintf(dateString, "%02u-%02u d%1u", now.month(), now.day(),now.dayOfWeek());
 	display.set(dateString);
 	display.show(2000);
-	if (digitalRead(EXTPOWER_PIN)) {
+	if (digitalRead(kExtPowerPin)) {
 		n = 0;
 	}
 }
-void displayTemp() {
+void DisplayTemp() {
 	uint8_t data[2];
-	Wire.beginTransmission(TMP100_ADDR);
+	Wire.beginTransmission(kTmp100Addr);
 	Wire.write(0x01);
 	Wire.endTransmission();
-	Wire.requestFrom(TMP100_ADDR, 1);
+	Wire.requestFrom(kTmp100Addr, 1);
 	uint8_t cros = Wire.read();
 	bitWrite(cros, 6, 1);               //One-shot Temperature
 
-	Wire.beginTransmission(TMP100_ADDR);
+	Wire.beginTransmission(kTmp100Addr);
 	Wire.write(0x01);
 	Wire.write(cros);
 	Wire.endTransmission();
 	delay(320);
 
-	Wire.beginTransmission(TMP100_ADDR);
+	Wire.beginTransmission(kTmp100Addr);
 	Wire.write(0X00);
 	Wire.endTransmission();
-	Wire.requestFrom(TMP100_ADDR, 2);
+	Wire.requestFrom(kTmp100Addr, 2);
 
 	if (Wire.available() == 2) {
 		data[0] = Wire.read();
@@ -277,29 +277,29 @@ void displayTemp() {
 	String Null = "        ";
 	display.set(Null);
 	display.show();
-	if (digitalRead(EXTPOWER_PIN)) {
+	if (digitalRead(kExtPowerPin)) {
 		n = 0;
 	}
 }
-void displayAll() {
+void DisplayAll() {
 	uint8_t data[2];
-	Wire.beginTransmission(TMP100_ADDR);
+	Wire.beginTransmission(kTmp100Addr);
 	Wire.write(0x01);
 	Wire.endTransmission();
-	Wire.requestFrom(TMP100_ADDR, 1);
+	Wire.requestFrom(kTmp100Addr, 1);
 	uint8_t cros = Wire.read();
 	bitWrite(cros, 6, 1);               //One-shot Temperature
 
-	Wire.beginTransmission(TMP100_ADDR);
+	Wire.beginTransmission(kTmp100Addr);
 	Wire.write(0x01);
 	Wire.write(cros);
 	Wire.endTransmission();
 	delay(320);
 
-	Wire.beginTransmission(TMP100_ADDR);
+	Wire.beginTransmission(kTmp100Addr);
 	Wire.write(0X00);
 	Wire.endTransmission();
-	Wire.requestFrom(TMP100_ADDR, 2);
+	Wire.requestFrom(kTmp100Addr, 2);
 
 	if (Wire.available() == 2) {
 		data[0] = Wire.read();
@@ -312,7 +312,7 @@ void displayAll() {
 	int dot = (temp1 & 0x00F)*0.625;
 	int fTemp = temp1 * 0.0625;
 
-	batteryval = getBatteryVal();
+	batteryval = getbatteryval();
 	batteryval = map(batteryval, 756, 978, 2, 100);
 	DateTime time = rtc.now();
 	sprintf(dateString, " %4u-%02u-%02u d%1u %02u_%02u  %2u#%1uC P%2u ", time.year(), time.month(), time.day(), time.dayOfWeek(), time.hour(), time.minute(),fTemp, dot, batteryval);
@@ -326,7 +326,7 @@ void displayAll() {
 	}
 }
 
-void printTime()
+void PrintTime()
 {
 	DateTime time = rtc.now();
 
@@ -336,7 +336,7 @@ void printTime()
 	Serial.println(dateString);
 }
 
-void setTime()
+void SetTime()
 {
 	uint8_t x;
 	char date[11], time[8];
@@ -370,7 +370,7 @@ Wire.endTransmission();
 
 Serial.println(F("Set Successful"));
 }
-void setAlarmTime() {
+void SetAlarmTime() {
 	uint8_t x, y;
 	uint8_t sec, min, hour, day, month, mode;
 	DateTime now = rtc.now();
@@ -385,28 +385,33 @@ void setAlarmTime() {
 	{
 	}
 	x = Serial.read(); // hour: tens digit
+	Serial.write(x);
 	y = Serial.read(); // hour: ones digit
+	Serial.write(y);
 	hour = 10 * (x - '0') + (y - '0');
 
 	x = Serial.read(); // discard spacer
+	Serial.write(x);
 	x = Serial.read(); // min: tens digit
+	Serial.write(x);
 	y = Serial.read(); // min: ones digit
+	Serial.write(y);
 	min = 10 * (x - '0') + (y - '0');
+
 	x = Serial.read(); //  discard spacer
+	Serial.write(x);
 	y = Serial.read(); // alarmRepeat mode
+	Serial.write(y);
+	Serial.println(" ");
 	mode = y - '0';
+
 	delay(10);
 	Serial.flush();
 	DateTime alarmTime(2019, month, day, hour, min, sec);
 	rtc.alarmSet(alarmTime);
 	rtc.alarmRepeat(mode);
-
 	Serial.println(F("Set Successful"));
 	//rtc.alarmRepeat(4);// set alarm repeat mode (once per day)
-	//DateTime alarmTime(2019, month, day, hour, min, sec);
-	// printTimeo(alarmTime);
-
-	// rtc.alarmEnable(1);
 }
 
 //void displayDate()
@@ -424,17 +429,17 @@ void setAlarmTime() {
 //}
 
 
-void checkButton() {
+void CheckButton() {
 	
-	if (digitalRead(BUTTON_PIN) == 0) {
-		delay(10);
-		if (digitalRead(BUTTON_PIN) == 0);
+	if (digitalRead(kButtonPin) == 0) {
+		delay(5);
+		if (digitalRead(kButtonPin) == 0);
 		{
 			if (rtc.checkFlags()) {
 
 				//rtc.printAllBits();
 				// delay(50);
-				playMusic();
+				PlayMusic();
 				key = 0;
 			}
 			else
@@ -444,7 +449,7 @@ void checkButton() {
 	}
 	
 }
-void ledlight() {
+void LedLight() {
 	for (int i = 1; i < 10; i++) {
 		digitalWrite(0, HIGH);
 		delay(300);
@@ -454,74 +459,74 @@ void ledlight() {
 	}
  }
 
-int getBatteryVal() {
+int getbatteryval() {
 	 int sum=0;
 	for (int i = 0; i < 5; i++) {
-		sum+= analogRead(BATTERY_PIN);
+		sum+= analogRead(kBatteryPin);
 		//Serial.print("Sum:=");
 		//Serial.println(sum);
 	}
 	return sum = sum / 5;
 }
 
-void playMusic(){
+void PlayMusic(){
 	for (int i = 0; i < 72; i++) {
-		note(MusicReadEeprom(2 * i), EIGHTHNOTE);
+		note(musicreadeeprom(2 * i), EIGHTHNOTE);
 	}
 	rest(EIGHTHNOTE);
 	/////// KEEP ALL CODE BELOW UNCHANGED, CHANGE VARS ABOVE ////////
-	noTone(speakerPin);
+	noTone(kSpeakerPin);
 }
 void spacedNote(int frequencyInHertz, int noteLength)
 {
-	tone(speakerPin, frequencyInHertz);
-	float delayTime = (1000 / tempo) * (60 / 4) * noteLength;
+	tone(kSpeakerPin, frequencyInHertz);
+	float delayTime = (1000 / kTempo) * (60 / 4) * noteLength;
 	delay(delayTime - 50);
-	noTone(speakerPin);
+	noTone(kSpeakerPin);
 	delay(50);
 }
 void note(int frequencyInHertz, int noteLength)  //Code to take care of the note
 {
-	tone(speakerPin, frequencyInHertz);
-	float delayTime = (1000 / tempo) * (60 / 4) * noteLength;
+	tone(kSpeakerPin, frequencyInHertz);
+	float delayTime = (1000 / kTempo) * (60 / 4) * noteLength;
 	delay(delayTime);
 }
 void rest(int restLength)
 {
-	noTone(speakerPin);
-	float delayTime = (1000 / tempo) * (60 / 4) * restLength;
+	noTone(kSpeakerPin);
+	float delayTime = (1000 / kTempo) * (60 / 4) * restLength;
 	delay(delayTime);
 }
 
-int MusicReadEeprom(uint16_t address) {
+int musicreadeeprom(uint16_t address) {
 	int data;
-	Wire.beginTransmission(M24LC128_ADDR);      
+	Wire.beginTransmission(kM24lc128Addr);      
 	Wire.write((int)(address >> 8));        
 	Wire.write((int)(address & 0xFF));              
 	Wire.endTransmission(I2C_NOSTOP);       
-	Wire.requestFrom(M24LC128_ADDR, 2);   
+	Wire.requestFrom(kM24lc128Addr, 2);   
 	uint8_t dataL = Wire.read();
 	uint8_t dataH = Wire.read(); 
 	data = dataH * 256 + dataL;
 	return data;                            
 }
-void M24LC128writeByte(uint16_t address, uint8_t  data)
+void m24lc128writebyte(uint16_t address, uint8_t  data)
 {
-	Wire.beginTransmission(M24LC128_ADDR); 
+	Wire.beginTransmission(kM24lc128Addr); 
 	Wire.write((int)(address >> 8));             
 	Wire.write((int)(address & 0xFF));                
 	Wire.write(data);                        
 	Wire.endTransmission();                   
 	delay(6);
 }
-void M24LC128writeBytes(uint16_t address, uint8_t count, uint8_t * dest)
+void m24lc128writebytes(uint16_t address, uint8_t count, uint8_t * dest)
 {
 	if (count > 64) {
 		count = 64;
 	//	Serial.print("Page count cannot be more than 64 bytes!");
 	}
 
-	Wire.beginTransmission(M24LC128_ADDR);   
+	Wire.beginTransmission(kM24lc128Addr);   
 	Wire.write((int)(address >> 8));
 	Wire.write((int)(address & 0xFF));
 	for (uint8_t i = 0; i < count; i++) {
@@ -529,25 +534,25 @@ void M24LC128writeBytes(uint16_t address, uint8_t count, uint8_t * dest)
 	}
 	Wire.endTransmission();                   
 }
-uint8_t M24LC128readByte(uint16_t address)
+uint8_t m24lc128readbyte(uint16_t address)
 {
 	uint8_t data;
-	Wire.beginTransmission(M24LC128_ADDR);       
+	Wire.beginTransmission(kM24lc128Addr);       
 	Wire.write((int)(address >> 8));               
 	Wire.write((int)(address & 0xFF));                
 	Wire.endTransmission(I2C_NOSTOP);        
-	Wire.requestFrom(M24LC128_ADDR, 1);   
+	Wire.requestFrom(kM24lc128Addr, 1);   
 	data = Wire.read();                      
 	return data;                             
 }
-void M24LC128readBytes(uint16_t address, int count, uint8_t * dest)
+void m24lc128readbytes(uint16_t address, int count, uint8_t * dest)
 {
-	Wire.beginTransmission(M24LC128_ADDR);      
+	Wire.beginTransmission(kM24lc128Addr);      
 	Wire.write((int)(address >> 8));
 	Wire.write((int)(address & 0xFF));
 	Wire.endTransmission(I2C_NOSTOP);         
 	uint8_t i = 0;
-	Wire.requestFrom(M24LC128_ADDR, count);
+	Wire.requestFrom(kM24lc128Addr, count);
 	while (Wire.available()) {
 		dest[i++] = Wire.read();
 	}              
