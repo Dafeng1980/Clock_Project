@@ -1,0 +1,6 @@
+﻿Compiling 'Clock_M41T62_TMP100' for 'ATmega644'
+Program size: 19,454 bytes (used 30% of a 64,512 byte maximum) (0.42 secs)
+Minimum Memory Usage: 811 bytes (20% of a 4096 byte maximum)
+ 
+Uploading 'Clock_M41T62_TMP100' to 'ATmega644' using 'COM3'
+	The upload process has finished.

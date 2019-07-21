@@ -28,10 +28,12 @@ volatile bool buttonPressed;
 volatile int key;
 
 const int kTempo = 120;
-const int kM24lc128Addr = 0x50;
+const int kHdc1080Addr = 0x40;
 const int kTmp100Addr = 0x4A;
+const int kM24lc128Addr = 0x50;
+
+const int kExtPowerPin = 1;
 const int kButtonPin = 2;
-const int kExtPowerPin = 4;
 const int kSpeakerPin = 12;
 const int kBatteryPin = A7;
 
@@ -39,7 +41,7 @@ const int kBatteryPin = A7;
 char dateString[31];
 char tempString[5];
 int n;
-int batteryval;
+volatile int batteryval;
 
 
 void buttonPressInterrupt() {
@@ -50,12 +52,7 @@ void buttonPressInterrupt() {
 
 void setup()
 {
-	uint8_t k;
-//#ifdef AVR
-//	Wire.begin();
-//#else
-//	Wire1.begin(); // Shield I2C pins connect to alt I2C bus on Arduino Due
-//#endif
+	
 	pinMode(kButtonPin, INPUT);
 	pinMode(kExtPowerPin, INPUT);
 	pinMode(kSpeakerPin, OUTPUT);
@@ -68,7 +65,7 @@ void setup()
 	rtc.begin();
 	rtc.checkFlags();
 	// rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-	InitTmp100();
+	InitTmp100Hdc1080();
 	sleepMode(SLEEP_POWER_DOWN);
 	
 
@@ -81,24 +78,24 @@ void setup()
 	Serial.println("");
 	Serial.println(F("Choose a menu item:"));
 	Serial.println(F("-------------------"));
+	DisplayInit();
+	batteryval = getbatteryval();
 	batteryval = getbatteryval();
 	Serial.print("BATTER_VAL:=");
 	Serial.println(batteryval);
-	batteryval = map(batteryval,756, 978, 2, 100);
+	batteryval = map(batteryval, 750, 980, 0, 100);
 	Serial.print("BATTER_VAL(%):=");
 	Serial.println(batteryval);
-	LedLight();
-
+	
 	if (Serial.available() > 0)
 	{
-		k = Serial.read();
+		uint8_t k = Serial.read();
 		switch (k)
 		{
 		//case 'S':
 		//case 's':
 		//	rtc.setStop(1);
 		//	break;
-
 		//case 'P':
 		//case 'p':
 		//	rtc.setStop(0);
@@ -126,7 +123,7 @@ void setup()
 	key = 0;
 	n = 0;
 
-	int extp = digitalRead(kExtPowerPin);
+	byte extp = digitalRead(kExtPowerPin);
 	Serial.print(F("kExtPowerPin:="));
 	Serial.println(extp);
 }
@@ -153,7 +150,8 @@ void loop()
 		DisplayDate();
 		break;
 	case 3 :
-		DisplayTemp();
+		//DisplayTemp();
+		DisplayTempHum();
 		break;
 	case 4 :
 		DisplayAll();
@@ -176,10 +174,17 @@ void loop()
 	//Serial.println(n);
 }
 
-void InitTmp100() {
+void InitTmp100Hdc1080() {
 	Wire.beginTransmission(kTmp100Addr);
 	Wire.write(0x01);
 	Wire.write(0x31);  // 12 bits Resolution(320ms); in Shutdown Mode
+	Wire.endTransmission();
+	delay(10);
+
+	Wire.beginTransmission(kHdc1080Addr);
+	Wire.write(0x02);
+	Wire.write(0x00);   // 14 bits Resolution(6.5ms); Mode = 0; Temperature or Humidity is acquired.
+	Wire.write(0x00);
 	Wire.endTransmission();
 }
 
@@ -243,36 +248,36 @@ void DisplayDate() {
 	}
 }
 void DisplayTemp() {
-	uint8_t data[2];
-	Wire.beginTransmission(kTmp100Addr);
-	Wire.write(0x01);
-	Wire.endTransmission();
-	Wire.requestFrom(kTmp100Addr, 1);
-	uint8_t cros = Wire.read();
-	bitWrite(cros, 6, 1);               //One-shot Temperature
+	//uint8_t data[2];
+	//Wire.beginTransmission(kTmp100Addr);
+	//Wire.write(0x01);
+	//Wire.endTransmission();
+	//Wire.requestFrom(kTmp100Addr, 1);
+	//uint8_t cros = Wire.read();
+	//bitWrite(cros, 6, 1);               //One-shot Temperature
 
-	Wire.beginTransmission(kTmp100Addr);
-	Wire.write(0x01);
-	Wire.write(cros);
-	Wire.endTransmission();
-	delay(320);
+	//Wire.beginTransmission(kTmp100Addr);
+	//Wire.write(0x01);
+	//Wire.write(cros);
+	//Wire.endTransmission();
+	//delay(320);
 
-	Wire.beginTransmission(kTmp100Addr);
-	Wire.write(0X00);
-	Wire.endTransmission();
-	Wire.requestFrom(kTmp100Addr, 2);
+	//Wire.beginTransmission(kTmp100Addr);
+	//Wire.write(0X00);
+	//Wire.endTransmission();
+	//Wire.requestFrom(kTmp100Addr, 2);
 
-	if (Wire.available() == 2) {
-		data[0] = Wire.read();
-		data[1] = Wire.read();
-	}
-	int temp1 = ((data[0] * 256) + data[1]) / 16;      // (msb << 8 |lsb) >> 4;
-	if (temp1 >= 2048) {
-		temp1 -= 4096;
-	}
-	int dot = (temp1 & 0x00F)*0.625;
-	int fTemp = temp1 * 0.0625;
-	sprintf(tempString, "%02u#%01uC", fTemp, dot);
+	//if (Wire.available() == 2) {
+	//	data[0] = Wire.read();
+	//	data[1] = Wire.read();
+	//}
+	//int temp1 = ((data[0] * 256) + data[1]) / 16;      // (msb << 8 |lsb) >> 4;
+	//if (temp1 >= 2048) {
+	//	temp1 -= 4096;
+	//}
+	int dot = (gettemperature() & 0x00F)*0.625;
+	int temp = gettemperature() * 0.0625;
+	sprintf(tempString, "%02u#%1uC", temp, dot);
 	display.show(tempString, 3000, ALIGN_CENTER);
 	String Null = "        ";
 	display.set(Null);
@@ -281,41 +286,27 @@ void DisplayTemp() {
 		n = 0;
 	}
 }
+void DisplayTempHum() {
+	//display.show();
+	byte dot = (gettemperature() & 0x00F)*0.625;
+	byte temp = gettemperature() * 0.0625;
+	byte hum = gethumidity();
+	sprintf(dateString, "%2u#%1u %2uH", temp, dot, hum);
+	display.set(dateString);
+	display.show(3000);
+	if (digitalRead(kExtPowerPin)) {
+		n = 0;
+	}
+}
 void DisplayAll() {
-	uint8_t data[2];
-	Wire.beginTransmission(kTmp100Addr);
-	Wire.write(0x01);
-	Wire.endTransmission();
-	Wire.requestFrom(kTmp100Addr, 1);
-	uint8_t cros = Wire.read();
-	bitWrite(cros, 6, 1);               //One-shot Temperature
-
-	Wire.beginTransmission(kTmp100Addr);
-	Wire.write(0x01);
-	Wire.write(cros);
-	Wire.endTransmission();
-	delay(320);
-
-	Wire.beginTransmission(kTmp100Addr);
-	Wire.write(0X00);
-	Wire.endTransmission();
-	Wire.requestFrom(kTmp100Addr, 2);
-
-	if (Wire.available() == 2) {
-		data[0] = Wire.read();
-		data[1] = Wire.read();
-	}
-	int temp1 = ((data[0] * 256) + data[1]) / 16;      // (msb << 8 |lsb) >> 4;
-	if (temp1 >= 2048) {
-		temp1 -= 4096;
-	}
-	int dot = (temp1 & 0x00F)*0.625;
-	int fTemp = temp1 * 0.0625;
-
+	// byte dot = (gettemperature() & 0x00F)*0.625;
+	byte temp = gettemperature() * 0.0625;
+	byte hum = gethumidity();
 	batteryval = getbatteryval();
 	batteryval = map(batteryval, 756, 978, 2, 100);
 	DateTime time = rtc.now();
-	sprintf(dateString, " %4u-%02u-%02u d%1u %02u_%02u  %2u#%1uC P%2u ", time.year(), time.month(), time.day(), time.dayOfWeek(), time.hour(), time.minute(),fTemp, dot, batteryval);
+	sprintf(dateString, " %4u-%02u-%02u d%1u %02u-%02u %2uC_%2uH P%2u ", time.year(), time.month(), time.day(), time.dayOfWeek(), time.hour(), time.minute(),temp, hum, batteryval);
+	// sprintf(dateString, " %4u-%02u-%02u d%1u %02u_%02u %2uC %2uH ", time.year(), time.month(), time.day(), time.dayOfWeek(), time.hour(), time.minute(), temp, hum);
 
 	String condition = dateString;
 	condition = "        " + condition;
@@ -325,7 +316,15 @@ void DisplayAll() {
 		condition.remove(0, 1);
 	}
 }
-
+void DisplayInit() {
+	for (int i = 1; i < 6; i++) {
+		sprintf(tempString, "LOAD");
+		display.show(tempString, 500, ALIGN_CENTER);
+		String Null = "        ";
+		display.set(Null);
+		display.show(600);
+	}
+}
 void PrintTime()
 {
 	DateTime time = rtc.now();
@@ -413,22 +412,6 @@ void SetAlarmTime() {
 	Serial.println(F("Set Successful"));
 	//rtc.alarmRepeat(4);// set alarm repeat mode (once per day)
 }
-
-//void displayDate()
-//{
-//	DateTime time = rtc.now();
-//	display.show(100);
-//	buttonPressed = false;
-//	sprintf(dateString, " %4u-%02u-%02u ", time.year(), time.month(), time.day());
-//	String condition = dateString;
-//	condition = "        " + condition;
-//	while (condition.length() > 0) {
-//		display.show(condition, 650, ALIGN_LEFT);
-//		condition.remove(0, 1);
-//	}
-//}
-
-
 void CheckButton() {
 	
 	if (digitalRead(kButtonPin) == 0) {
@@ -449,24 +432,56 @@ void CheckButton() {
 	}
 	
 }
-void LedLight() {
-	for (int i = 1; i < 10; i++) {
-		digitalWrite(0, HIGH);
-		delay(300);
-		digitalWrite(0, LOW);
-		delay(300);
-
-	}
- }
-
 int getbatteryval() {
 	 int sum=0;
 	for (int i = 0; i < 5; i++) {
 		sum+= analogRead(kBatteryPin);
-		//Serial.print("Sum:=");
-		//Serial.println(sum);
+		Serial.print("Sum:=");
+		Serial.println(sum);
 	}
 	return sum = sum / 5;
+}
+int gettemperature() {
+	Wire.beginTransmission(kTmp100Addr);
+	Wire.write(0x01);
+	Wire.endTransmission();
+	delay(5);
+	Wire.requestFrom(kTmp100Addr, 1);
+	uint8_t cros = Wire.read();
+	bitWrite(cros, 6, 1);               //One-shot Temperature
+
+	Wire.beginTransmission(kTmp100Addr);
+	Wire.write(0x01);
+	Wire.write(cros);
+	Wire.endTransmission();
+	delay(330);
+
+	Wire.beginTransmission(kTmp100Addr);
+	Wire.write(0x00);
+	Wire.endTransmission();
+	Wire.requestFrom(kTmp100Addr, 2);
+	byte msb = Wire.read();
+	byte lsb = Wire.read();
+	int temp = ((msb << 8) | lsb) >> 4;
+	//int temp = ((msb * 256) + lsb) / 16;
+	if (temp >= 2048) {
+		temp -= 4096;	
+	}
+	return temp;
+}
+double gethumidity() {
+	Wire.beginTransmission(kHdc1080Addr);
+	Wire.write(0x01);
+	Wire.endTransmission();
+	delay(10);
+	Wire.requestFrom(kHdc1080Addr, 2);
+	byte msb = Wire.read();
+	byte lsb = Wire.read();
+	uint16_t hum = (msb << 8) | lsb;
+	Serial.print("Hum:=");
+	Serial.println(hum);
+	double fhum = (hum / pow(2, 16)) * 100.0;
+	return  fhum ;
 }
 
 void PlayMusic(){
