@@ -73,7 +73,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\Clock_M41T62_TMP100;C:\Users\Dafeng\AppData\Local\arduino15\packages\MightyCore\hardware\avr\2.0.2\libraries\Wire\src;$(ProjectDir)..\libraries\RTC_M41T62-master;$(ProjectDir)..\libraries\ShiftDisplay\src;C:\Users\Dafeng\AppData\Local\arduino15\packages\MightyCore\hardware\avr\2.0.2\libraries\Wire\src\utility;C:\Program Files (x86)\Arduino\libraries;$(ProjectDir)..\libraries;C:\Users\Dafeng\AppData\Local\arduino15\packages\MightyCore\hardware\avr\2.0.2\libraries;C:\Users\Dafeng\AppData\Local\arduino15\packages\MightyCore\hardware\avr\2.0.2\cores\MCUdude_corefiles;C:\Users\Dafeng\AppData\Local\arduino15\packages\MightyCore\hardware\avr\2.0.2\cores\MCUdude_corefiles\travis-ci;C:\Users\Dafeng\AppData\Local\arduino15\packages\MightyCore\hardware\avr\2.0.2\variants\standard;C:\Program Files (x86)\Arduino\hardware\tools\avr\avr\include;C:\Program Files (x86)\Arduino\hardware\tools\avr\avr\include\avr;C:\Program Files (x86)\Arduino\hardware\tools\avr\lib\gcc\avr\4.8.1\include;C:\Program Files (x86)\Arduino\hardware\tools\avr\lib\gcc\avr\4.9.2\include;C:\Program Files (x86)\Arduino\hardware\tools\avr\lib\gcc\avr\4.9.3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\Clock_M41T62_TMP100;C:\Users\Dafeng\AppData\Local\arduino15\packages\MightyCore\hardware\avr\2.0.2\libraries\Wire\src;$(ProjectDir)..\libraries\RTC_M41T62-master;$(ProjectDir)..\libraries\ShiftDisplay\src;C:\Program Files (x86)\Arduino\libraries;$(ProjectDir)..\libraries;C:\Users\Dafeng\AppData\Local\arduino15\packages\MightyCore\hardware\avr\2.0.2\libraries;C:\Users\Dafeng\AppData\Local\arduino15\packages\MightyCore\hardware\avr\2.0.2\cores\MCUdude_corefiles;C:\Users\Dafeng\AppData\Local\arduino15\packages\MightyCore\hardware\avr\2.0.2\cores\MCUdude_corefiles\travis-ci;C:\Users\Dafeng\AppData\Local\arduino15\packages\MightyCore\hardware\avr\2.0.2\variants\standard;C:\Program Files (x86)\Arduino\hardware\tools\avr\avr\include;C:\Program Files (x86)\Arduino\hardware\tools\avr\avr\include\avr;C:\Program Files (x86)\Arduino\hardware\tools\avr\lib\gcc\avr\4.8.1\include;C:\Program Files (x86)\Arduino\hardware\tools\avr\lib\gcc\avr\4.9.2\include;C:\Program Files (x86)\Arduino\hardware\tools\avr\lib\gcc\avr\4.9.3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>$(ProjectDir)__vm\.Clock_M41T62_TMP100.vsarduino.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <PreprocessorDefinitions>__AVR_atmega644p__;__AVR_ATmega644P__;__AVR_ATmega644p__;F_CPU=8000000L;ARDUINO=10809;ARDUINO_AVR_ATmega644;ARDUINO_ARCH_AVR;__cplusplus=201103L;_VMICRO_INTELLISENSE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -114,9 +114,4 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-  <ProjectExtensions>
-    <VisualStudio>
-      <UserProperties custom_MightyCore_644_BOD="disabled" arduino.upload.port="COM3" />
-    </VisualStudio>
-  </ProjectExtensions>
 </Project>
