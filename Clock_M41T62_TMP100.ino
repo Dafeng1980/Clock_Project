@@ -23,29 +23,14 @@
 #define SLEEP_FOREVER 10
 #define SLEEP_8S 9
 #define SLEEP_4S 8
-
+#define SLEEP_2S 7
+#define SLEEP_1S 6
 #define I2C_NOSTOP 0
-
 
 RTC_M41T62 rtc;
 ShiftDisplay display(14, 15, 13, COMMON_ANODE, 8);
 
-//enum period_t
-//{
-//	SLEEP_15MS,
-//	SLEEP_30MS,
-//	SLEEP_60MS,
-//	SLEEP_120MS,
-//	SLEEP_250MS,
-//	SLEEP_500MS,
-//	SLEEP_1S,
-//	SLEEP_2S,
-//	SLEEP_4S,
-//	SLEEP_8S,
-//	SLEEP_FOREVER
-//};
-
-volatile bool buttonPressed;
+volatile bool buttonPressed, weekend, alarmstatus;
 volatile int key;
 
 const int kTempo = 120;
@@ -63,14 +48,11 @@ char tempString[5];
 int n, st;
 
 void WakeUp() {
-	
 	buttonPressed = true;
-	// noSleep();
 }
 
 void setup()
 {
-	
 	pinMode(kButtonPin, INPUT);
 	pinMode(kExtPowerPin, INPUT);
 	pinMode(kSpeakerPin, OUTPUT);
@@ -78,13 +60,13 @@ void setup()
 	// attachInterrupt(digitalPinToInterrupt(kButtonPin), buttonPressInterrupt, FALLING);
 	analogReference(INTERNAL1V1);
 	buttonPressed = false;
-
+	weekend = true;
+	alarmstatus = true;
 	Serial.begin(38400);
 	rtc.begin();
 	rtc.checkFlags();
 	// rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 	InitTmp100Hdc1080();
-	// sleepMode(SLEEP_POWER_DOWN);
 	PrintTime();
 	Serial.println("");
 	// Serial.println(F("S [S]tart"));
@@ -96,7 +78,6 @@ void setup()
 	Serial.println(F("-------------------"));
 	DisplayInit();
 	int val = getbatteryval();
-	    val = getbatteryval();
 	Serial.print("BATTER_VAL:=");
 	Serial.println(val);
 	val = map(val, 750, 980, 0, 100);
@@ -129,17 +110,21 @@ void setup()
 		delay(10);
 		Serial.flush();
 	}
-	
 	// rtc.alarmRepeat(4);  // set alarm repeat mode (once per Day)
 	Serial.print(F("Repeat Mode Set: "));
 	Serial.println(rtc.alarmRepeat());
 	rtc.alarmEnable(1);
 	rtc.printAllBits();
 	DisplayAll();
+	if (alarmstatus)
+		DisplayOn();
+	else
+	{
+		DisplayOff();
+	}
 	key = 0;
 	n = 0;
 	st = 0;
-
 	byte extp = digitalRead(kExtPowerPin);
 	Serial.print(F("kExtPowerPin:="));
 	Serial.println(extp);
@@ -149,11 +134,17 @@ void loop()
 {
 	if (buttonPressed) {
 		detachInterrupt(digitalPinToInterrupt(kButtonPin));
+		buttonPressed = false;
+		if (alarmstatus)
+			DisplayOn();
+		else
+		{
+			DisplayOff();
+		}
 		DisplayAll();
 		key = 0;
 		n = 0;
-		st = 0;
-		buttonPressed = false;
+		st = 0;	
 	}
 	switch (key)
 	{
@@ -162,42 +153,50 @@ void loop()
 			break;
 	case 1 :
 		DisplayTimeA();
+		st = 0;
 		break;
 	case 2 :
 		DisplayDate();
+		if (st > 3) {
+			key = 0;
+		}
+		st++;
 		break;
 	case 3 :
-		//DisplayTemp();
 		DisplayTempHum();
+		st = 0;
 		break;
 	case 4 :
-		
 		DisplayAll();
-		st++;
-		if (st > 1) {
+		if (st > 0) {
 			key = 0;
-			st = 0;
 		}
+		st++;
 		break;
 
 	case 5 :
 		DispalyShutdown();
 		attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, FALLING);
 		powerdown(SLEEP_FOREVER);
+		detachInterrupt(digitalPinToInterrupt(kButtonPin));
 	default:
 		key = 0;
+		if (alarmstatus) {
+			alarmstatus = false;
+		}
+		else
+		{
+			alarmstatus = true;
+		}
 		break;
 	}
-
 	if (n == 600)
 	{
 		DispalyShutdown();
-		//n = 0;
 		attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, FALLING);
 		delay(10);
 		powerdown(SLEEP_FOREVER);
-       //detachInterrupt(digitalPinToInterrupt(kButtonPin));
-		//sleep();
+       detachInterrupt(digitalPinToInterrupt(kButtonPin));
 	}
 	n++;
 	ButtonDetect();
@@ -205,6 +204,10 @@ void loop()
 	//Serial.println(n);
 	//Serial.print("key:=");
 	//Serial.println(key);
+	//Serial.print("alarmstatus:=");
+	//Serial.println(alarmstatus);
+	//Serial.print("weekend:=");
+	//Serial.println(weekend);
 }
 
 void InitTmp100Hdc1080() {
@@ -222,7 +225,16 @@ void InitTmp100Hdc1080() {
 }
 
 void DisplayTime() {
+	byte week;
 	DateTime now = rtc.now();
+	week = now.dayOfWeek();
+	if (week == 6 || week == 0) {
+		weekend = false;
+	}
+	else
+	{
+		weekend = true;
+	}
 	sprintf(dateString, "%02u %02u %02u", now.hour(), now.minute(), now.second());
 	display.set(dateString);
 	display.setDot(0, true);
@@ -239,19 +251,16 @@ void DisplayTime() {
 	display.setDot(4, false);
 	display.setDot(5, false);
 	display.show(500);
-
 	if (!((n+1)%36)) {
 
-		DisplayTemp();
-		if (digitalRead(kExtPowerPin)) {
-			n = 0;
-		}
+		DisplayTempHum();
+
 	}
 }
 void DisplayTimeA() {
 	uint8_t dow;
 	DateTime now = rtc.now();
-	sprintf(dateString, "%02u d%1u %02u", now.hour(), now.dayOfWeek(), now.minute());
+	sprintf(dateString, "%02u%02u  d%1u", now.hour(), now.minute(), now.dayOfWeek());
 	display.set(dateString);
 	display.setDot(0, true);
 	display.setDot(1, true);
@@ -267,18 +276,12 @@ void DisplayTimeA() {
 	display.setDot(4, false);
 	display.setDot(5, false);
 	display.show(500);
-	if (digitalRead(kExtPowerPin)) {
-		n = 0;
-	}
 }
 void DisplayDate() {
 	DateTime now = rtc.now();
-	sprintf(dateString, "%02u-%02u d%1u", now.month(), now.day(),now.dayOfWeek());
+	sprintf(dateString, "d%1u %02u-%02u ", now.dayOfWeek(), now.month(), now.day() );
 	display.set(dateString);
 	display.show(2000);
-	if (digitalRead(kExtPowerPin)) {
-		n = 0;
-	}
 }
 void DisplayTemp() {
 	int dot = (gettemperature() & 0x00F)*0.625;
@@ -288,38 +291,27 @@ void DisplayTemp() {
 	String Null = "        ";
 	display.set(Null);
 	display.show();
-	if (digitalRead(kExtPowerPin)) {
-		n = 0;
-	}
 }
 void DisplayTempHum() {
-	//display.show();
 	byte dot = (gettemperature() & 0x00F)*0.625;
 	byte temp = gettemperature() * 0.0625;
 	byte hum = gethumidity();
 	sprintf(dateString, "%2u#%1u %2uH", temp, dot, hum);
 	display.set(dateString);
 	display.show(3500);
-	if (digitalRead(kExtPowerPin)) {
-		n = 0;
-	}
 }
 void DisplayAll() {
 	// byte dot = (gettemperature() & 0x00F)*0.625;
 	byte temp = gettemperature() * 0.0625;
 	byte hum = gethumidity();
-	int batteryval;
-	batteryval = getbatteryval();
-	batteryval = map(batteryval, 756, 978, 2, 100);
+	int batteryval = map(getbatteryval(), 750, 980, 0, 100);
 	DateTime time = rtc.now();
 	sprintf(dateString, " %4u-%02u-%02u d%1u %02u-%02u %2uC_%2uH P%2u ", time.year(), time.month(), time.day(), time.dayOfWeek(), time.hour(), time.minute(),temp, hum, batteryval);
-	//sprintf(dateString, " %4u-%02u-%02u d%1u %02u_%02u %2uC %2uH ", time.year(), time.month(), time.day(), time.dayOfWeek(), time.hour(), time.minute(), temp, hum);
-
 	String condition = dateString;
 	condition = "        " + condition;
 
 	while (condition.length() > 0) {
-		display.show(condition, 650, ALIGN_LEFT);
+		display.show(condition, 550, ALIGN_LEFT);
 		condition.remove(0, 1);
 	}
 }
@@ -341,6 +333,12 @@ void DispalyShutdown() {
 		display.show(300);
 	}
 
+}
+void DisplayOn() {
+	display.show("ON", 3000, ALIGN_CENTER);
+}
+void DisplayOff() {
+	display.show("OFF", 3000, ALIGN_CENTER);
 }
 void PrintTime()
 {
@@ -429,13 +427,13 @@ void SetAlarmTime() {
 	Serial.println(F("Set Successful"));
 	//rtc.alarmRepeat(4);// set alarm repeat mode (once per day)
 }
-void ButtonDetect() {
-	
+void ButtonDetect() {	
 	if (digitalRead(kButtonPin) == 0) {
 		delay(5);
 		if (digitalRead(kButtonPin) == 0);
-		{
-			if (rtc.checkFlags()) {
+		{	
+
+			if (rtc.checkFlags() && weekend && alarmstatus) {
 				PlayMusic();
 				key = 0;
 			}
@@ -444,16 +442,19 @@ void ButtonDetect() {
 			n = 0;
 		}
 	}
-	
+	if (digitalRead(kExtPowerPin) && n > 50 ) {
+			n = 0;
+	}	
 }
+
 int getbatteryval() {
 	 int sum=0;
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 3; i++) {
 		sum+= analogRead(kBatteryPin);
-		//Serial.print("Sum:=");
-		//Serial.println(sum);
+		Serial.print("Sum:=");
+		Serial.println(sum);
 	}
-	return sum = sum / 5;
+	return sum = sum / 3;
 }
 int gettemperature() {
 	Wire.beginTransmission(kTmp100Addr);
