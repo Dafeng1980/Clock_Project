@@ -57,6 +57,7 @@ void setup()
 	pinMode(kExtPowerPin, INPUT);
 	pinMode(kSpeakerPin, OUTPUT);
 	pinMode(0, OUTPUT);
+	digitalWrite(0, HIGH);
 	// attachInterrupt(digitalPinToInterrupt(kButtonPin), buttonPressInterrupt, FALLING);
 	analogReference(INTERNAL1V1);
 	buttonPressed = false;
@@ -445,14 +446,29 @@ void ButtonDetect() {
 	if (digitalRead(kExtPowerPin) && n > 50 ) {
 			n = 0;
 	}	
+	if (getbatteryval() <= 765) {
+		digitalWrite(0, LOW);
+		if (!((n + 1) % 120)) {
+			DispalyShutdown();
+			attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, FALLING);
+			delay(10);
+			powerdown(SLEEP_FOREVER);
+			detachInterrupt(digitalPinToInterrupt(kButtonPin));
+
+		}
+
+	}
+	if (getbatteryval() > 775) {
+		digitalWrite(0, HIGH);
+	}
 }
 
 int getbatteryval() {
 	 int sum=0;
 	for (int i = 0; i < 3; i++) {
 		sum+= analogRead(kBatteryPin);
-		Serial.print("Sum:=");
-		Serial.println(sum);
+		//Serial.print("Sum:=");
+		//Serial.println(sum);
 	}
 	return sum = sum / 3;
 }
@@ -493,8 +509,8 @@ double gethumidity() {
 	byte msb = Wire.read();
 	byte lsb = Wire.read();
 	uint16_t hum = (msb << 8) | lsb;
-	Serial.print("Hum:=");
-	Serial.println(hum);
+	//Serial.print("Hum:=");
+	//Serial.println(hum);
 	double fhum = (hum / pow(2, 16)) * 100.0;
 	return  fhum ;
 }
@@ -505,6 +521,12 @@ void PlayMusic(){
 	}
 	rest(EIGHTHNOTE);
 	/////// KEEP ALL CODE BELOW UNCHANGED, CHANGE VARS ABOVE ////////
+	for (int i = 0; i < 220; i++) {
+		noTone(kSpeakerPin);
+		delay(100);
+		tone(kSpeakerPin, 2050);
+		delay(90);
+	}
 	noTone(kSpeakerPin);
 }
 void spacedNote(int frequencyInHertz, int noteLength)
