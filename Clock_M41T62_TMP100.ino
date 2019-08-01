@@ -70,8 +70,6 @@ void setup()
 	InitTmp100Hdc1080();
 	PrintTime();
 	Serial.println("");
-	// Serial.println(F("S [S]tart"));
-	// Serial.println(F("P sto[P]"));
 	Serial.println(F("T set [T]ime"));
 	Serial.println(F("A set [A]larm time"));
 	Serial.println("");
@@ -197,7 +195,7 @@ void loop()
 		attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, FALLING);
 		delay(10);
 		powerdown(SLEEP_FOREVER);
-       detachInterrupt(digitalPinToInterrupt(kButtonPin));
+        detachInterrupt(digitalPinToInterrupt(kButtonPin));
 	}
 	n++;
 	ButtonDetect();
@@ -261,21 +259,11 @@ void DisplayTime() {
 void DisplayTimeA() {
 	uint8_t dow;
 	DateTime now = rtc.now();
-	sprintf(dateString, "%02u%02u  d%1u", now.hour(), now.minute(), now.dayOfWeek());
+	sprintf(dateString, "%02u=%02u d%1u", now.hour(), now.minute(), now.dayOfWeek());
 	display.set(dateString);
-	display.setDot(0, true);
-	display.setDot(1, true);
-	display.setDot(2, true);
-	display.setDot(3, true);
-	display.setDot(4, true);
-	display.setDot(5, true);
 	display.show(500);
-	display.setDot(0, false);
-	display.setDot(1, false);
-	display.setDot(2, false);
-	display.setDot(3, false);
-	display.setDot(4, false);
-	display.setDot(5, false);
+	sprintf(dateString, "%02u %02u d%1u", now.hour(), now.minute(), now.dayOfWeek());
+	display.set(dateString);
 	display.show(500);
 }
 void DisplayDate() {
@@ -307,7 +295,7 @@ void DisplayAll() {
 	byte hum = gethumidity();
 	int batteryval = map(getbatteryval(), 750, 980, 0, 100);
 	DateTime time = rtc.now();
-	sprintf(dateString, " %4u-%02u-%02u d%1u %02u-%02u %2uC_%2uH P%2u ", time.year(), time.month(), time.day(), time.dayOfWeek(), time.hour(), time.minute(),temp, hum, batteryval);
+	sprintf(dateString, " %4u-%02u-%02u d%1u %02u=%02u %2uC_%2uH P%2u ", time.year(), time.month(), time.day(), time.dayOfWeek(), time.hour(), time.minute(),temp, hum, batteryval);
 	String condition = dateString;
 	condition = "        " + condition;
 
@@ -448,7 +436,7 @@ void ButtonDetect() {
 	}	
 	if (getbatteryval() <= 765) {
 		digitalWrite(0, LOW);
-		if (!((n + 1) % 120)) {
+		if (!((n + 1) % 60)) {
 			DispalyShutdown();
 			attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, FALLING);
 			delay(10);
