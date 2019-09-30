@@ -1,0 +1,4 @@
+﻿Compiling 'Clock_M41T62_TMP100' for 'ATmega644'
+Program size: 20,118 bytes (used 31% of a 64,512 byte maximum) (4.28 secs)
+Minimum Memory Usage: 846 bytes (21% of a 4096 byte maximum)
+ 
