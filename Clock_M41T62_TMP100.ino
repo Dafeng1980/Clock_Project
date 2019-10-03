@@ -187,7 +187,7 @@ void loop()
 		}
 		break;
 	}
-	if (n == 600)
+	if (n == 290)
 	{
 		DispalyShutdown();
 		attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, FALLING);
@@ -257,7 +257,20 @@ void DisplayTimeA() {
 }
 void DisplayDate() {
 	DateTime now = rtc.now();
-	sprintf(dateString, "d%1u %02u-%02u ", now.dayOfWeek(), now.month(), now.day());
+	int batteryval = map(getbatteryval(), 750, 980, 0, 100);
+	if (batteryval > 85)
+		sprintf(dateString, "++ %02u-%02u ", now.month(), now.day());
+	else if (batteryval <= 85 && batteryval >70)
+		sprintf(dateString, "=+ %02u-%02u ", now.month(), now.day());
+	else if (batteryval <= 70 && batteryval >55)
+		sprintf(dateString, "_+ %02u-%02u ", now.month(), now.day());
+	else if (batteryval <= 55 && batteryval >40)
+		sprintf(dateString, " + %02u-%02u ", now.month(), now.day());
+	else if (batteryval <= 40 && batteryval > 20)
+		sprintf(dateString, " = %02u-%02u ", now.month(), now.day());
+	else if (batteryval <= 20)
+		sprintf(dateString, " _ %02u-%02u ", now.month(), now.day());
+   
 	display.set(dateString);
 	display.show(2000);
 }
