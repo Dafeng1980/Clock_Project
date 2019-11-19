@@ -3,7 +3,11 @@ CLOCK
 
 A alarm clock based on M41T62. 
 
-FEATURES
+FEATURES:
 
-temperature sensor TMP100
+*ATMEGA644PA MCU on board
+
+*temperature sensor TMP100
+
+*Humidity sensor 
 
