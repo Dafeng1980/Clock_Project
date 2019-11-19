@@ -11,5 +11,7 @@ FEATURES:
 
 *humidity sensor HDC1080
 
+*external EEPROM M512
+
 
 
