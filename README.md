@@ -5,9 +5,11 @@ A alarm clock based on M41T62.
 
 FEATURES:
 
-*ATMEGA644PA MCU on board
+*atmega644pa MCU on board
 
 *temperature sensor TMP100
 
-*Humidity sensor 
+*humidity sensor HDC1080
+
+
 
