@@ -1,3 +1,6 @@
 # Clock_M41T62_TMP100
 CLOCK
-the alarm is build in Ardunio
+A alarm clock based on M41T62. 
+FEATURES
+temperature sensor TMP100
+
