@@ -17,7 +17,7 @@
 #define __AVR_ATmega644P__
 #define __AVR_ATmega644p__
 #define F_CPU 8000000L
-#define ARDUINO 10809
+#define ARDUINO 108010
 #define ARDUINO_AVR_ATmega644
 #define ARDUINO_ARCH_AVR
 #define __cplusplus 201103L

@@ -1,7 +1,7 @@
-C:\Users\Dafeng\AppData\Local\Temp\VMBuilds\Clock_M41T62_TMP100\MightyCore_644\Release\Wire\Wire.cpp.o: \
- C:\Users\Dafeng\AppData\Local\arduino15\packages\MightyCore\hardware\avr\2.0.3\libraries\Wire\src\Wire.cpp \
- C:\Users\Dafeng\AppData\Local\arduino15\packages\MightyCore\hardware\avr\2.0.3\libraries\Wire\src\utility/twi.h \
- C:\Users\Dafeng\AppData\Local\arduino15\packages\MightyCore\hardware\avr\2.0.3\libraries\Wire\src\Wire.h \
+C:\Users\Dafeng\AppData\Local\Temp\VMBuilds\Clock_M41T62_TMP100\MightyCore_644\Release\Arduino-IRremote-master\ir_Panasonic.cpp.o: \
+ D:\Documents\Arduino\libraries\Arduino-IRremote-master\ir_Panasonic.cpp \
+ D:\Documents\Arduino\libraries\Arduino-IRremote-master\IRremote.h \
+ D:\Documents\Arduino\libraries\Arduino-IRremote-master\IRremoteInt.h \
  C:\Users\Dafeng\AppData\Local\arduino15\packages\MightyCore\hardware\avr\2.0.3\cores\MCUdude_corefiles/Arduino.h \
  C:\Users\Dafeng\AppData\Local\arduino15\packages\MightyCore\hardware\avr\2.0.3\cores\MCUdude_corefiles/binary.h \
  C:\Users\Dafeng\AppData\Local\arduino15\packages\MightyCore\hardware\avr\2.0.3\cores\MCUdude_corefiles/WCharacter.h \
@@ -14,4 +14,4 @@ C:\Users\Dafeng\AppData\Local\Temp\VMBuilds\Clock_M41T62_TMP100\MightyCore_644\R
  C:\Users\Dafeng\AppData\Local\arduino15\packages\MightyCore\hardware\avr\2.0.3\cores\MCUdude_corefiles/Arduino.h \
  C:\Users\Dafeng\AppData\Local\arduino15\packages\MightyCore\hardware\avr\2.0.3\cores\MCUdude_corefiles/wiring_extras.h \
  C:\Users\Dafeng\AppData\Local\arduino15\packages\MightyCore\hardware\avr\2.0.3\variants\standard/pins_arduino.h \
- C:\Users\Dafeng\AppData\Local\arduino15\packages\MightyCore\hardware\avr\2.0.3\cores\MCUdude_corefiles/Stream.h
+ D:\Documents\Arduino\libraries\Arduino-IRremote-master\boarddefs.h
