@@ -13,5 +13,7 @@ FEATURES:
 
 *external EEPROM M24LC128
 
+Irremote
+
 
 
