@@ -5,15 +5,17 @@ A alarm clock based on M41T62.
 
 FEATURES:
 
-*atmega644pa MCU on board
+* Atmega644pa MCU on board
 
-*temperature sensor TMP100
+* Temperature sensor TMP100
 
-*humidity sensor HDC1080
+* Humidity sensor HDC1080
 
-*external EEPROM M24LC128
+* External EEPROM M24LC128
 
-Irremote
+* TL1838 Infrared Receiver
+
+* LED light
 
 
 
