@@ -187,6 +187,9 @@ void loop()
   case 5:
     DispalyShutdown();
     attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, FALLING);
+    digitalWrite(kLightPin, LOW);
+    lightstatus = false;
+    delay(10);
     powerdown(SLEEP_FOREVER);
     detachInterrupt(digitalPinToInterrupt(kButtonPin));
   default:
@@ -204,6 +207,8 @@ void loop()
   {
     DispalyShutdown();
     attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, FALLING);
+    digitalWrite(kLightPin, LOW);
+    lightstatus = false;
     delay(10);
     powerdown(SLEEP_FOREVER);
     detachInterrupt(digitalPinToInterrupt(kButtonPin));
