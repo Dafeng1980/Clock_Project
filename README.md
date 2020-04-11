@@ -13,7 +13,7 @@ FEATURES:
 
 * External EEPROM M24LC128
 
-* TL1838 Infrared Receiver   //Voice controk via XiaoMi smart IR Speakers
+* TL1838 Infrared Receiver      // Voice control via the XiaoMi smart Speaker by IR
 
 * LED light
 
