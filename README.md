@@ -1,8 +1,7 @@
 # Clock_M41T62_TMP100
 ### CLOCK
 An alarm clock using the RTC M41T62.  
-
-FEATURES:
+### FEATURES:
 
 * Atmega644pa MCU Arduino board
 
