@@ -1,19 +1,19 @@
 # Clock_M41T62_TMP100
 CLOCK
 
-A alarm clock based on M41T62. 
+An alarm clock using the RTC M41T62. 
 
 FEATURES:
 
-* Atmega644pa MCU on board
+* Atmega644pa MCU Arduino board
 
-* Temperature sensor TMP100
+* Temperature sensor for TMP100
 
-* Humidity sensor HDC1080
+* Humidity sensor for HDC1080
 
 * External EEPROM M24LC128
 
-* TL1838 Infrared Receiver
+* TL1838 Infrared Receiver   //Voice controk via XiaoMi smart IR Speakers
 
 * LED light
 
