@@ -12,7 +12,7 @@ An alarm clock using the RTC M41T62.
 * External EEPROM M24LC128
 
 * TL1838 Infrared Receiver
-    * Voice control by the XiaoMi IR-smart Speaker.
+    * Use the IR of Xiaomi Smart-speaker to realize voice control.
 
 * LED light
 
