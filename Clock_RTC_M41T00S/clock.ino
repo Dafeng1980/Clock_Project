@@ -1,4 +1,68 @@
 
+void adjTimeAlarm(){
+   PrintTime();
+  Serial.println("");
+  Serial.println(F("T set [T]ime"));
+  Serial.println(F("A set [A]larm time"));
+  Serial.println("");
+  Serial.println(F("Choose a menu item:"));
+  Serial.println(F("-------------------"));
+  delay(3500);
+    if (Serial.available() > 0)
+  {
+    uint8_t k = Serial.read();
+    switch (k)
+    {
+    case 'T':
+    case 't':
+      SetTime();
+      break;
+    case 'A':
+    case 'a':
+     SetAlarmTime();
+    default:
+      break;
+    }
+    delay(10);
+    Serial.flush();
+  }
+}
+
+void lcdDisplayAll(){
+      DateTime now = rtc.now();
+      u8g2.clearBuffer();
+      u8g2.setFontMode(1);
+      u8g2.setFont(u8g2_font_6x10_tr);    
+      u8g2.setCursor(0, 10);
+      u8g2.print(now.year(), DEC);
+      u8g2.print('/');
+      u8g2.print(now.month(), DEC);
+      u8g2.print('/');
+      u8g2.print(now.day(), DEC);
+      u8g2.print(' ');
+      u8g2.print(daysOfTheWeek[now.dayOfTheWeek()]);
+      u8g2.setFont(u8g2_font_10x20_tr);
+      u8g2.setCursor(0, 32);
+      sprintf(dateString, "%02u:%02u:%02u", now.hour(), now.minute(), now.second());
+      u8g2.print(dateString);
+      u8g2.print(" ");
+      u8g2.print(gettemp(), 1);      
+      u8g2.sendBuffer();
+}
+ void lcdDisplayA(){      
+      DateTime now = rtc.now();
+      u8g2.clearBuffer();
+      u8g2.setFontMode(1);
+      u8g2.setFont(u8g2_font_inr30_mf);
+      u8g2.setCursor(0, 32);
+      if(n=n^1) sprintf(dateString, "%02u:%02u", now.hour(), now.minute());     
+         else   sprintf(dateString, "%02u %02u", now.hour(), now.minute());
+//      Serial.print("n= ");
+//      Serial.println(n);
+      u8g2.print(dateString);
+      u8g2.sendBuffer();
+ }
+
 float gettemp(){
   uint8_t data[2];
   float fTemp;
@@ -27,14 +91,14 @@ void alarmbuzzer(){
   for (int i = 0; i < 602; i++) {
     noTone(kBuzzerPin);
     delay(120);
-//    if (digitalRead(kButtonPin) == 0) {
-//      delay(5);
-//      if (digitalRead(kButtonPin) == 0);
-//      {
+    if (digitalRead(kButtonPin) == 0) {
+      delay(5);
+      if (digitalRead(kButtonPin) == 0);
+      {
 //        key = 0;
-//        break;
-//      }
-//    }
+        break;
+      }
+    }
 //    if (irrecv.decode(&results)){
 //      break;
 //    }
