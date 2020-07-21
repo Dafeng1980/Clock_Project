@@ -2,6 +2,7 @@
 #include <U8g2lib.h>
 #include <stdint.h>
 #include <EEPROM.h>
+#include <Adafruit_NeoPixel.h>
 
 #ifdef U8X8_HAVE_HW_I2C
 #include <Wire.h>
@@ -10,11 +11,15 @@
 #define UI_BUFFER_SIZE 64
 #define SERIAL_TERMINATOR '\n'
 #define TMP112_ADDR  0x49
+#define PIN 7
 
+Adafruit_NeoPixel led(6, PIN, NEO_GRB + NEO_KHZ400);
 U8G2_SSD1306_128X32_UNIVISION_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
+
 RTC_M41T00S rtc;
 
-volatile bool pressedButton, n;
+volatile bool pressedButton, n, ledstatus;
+volatile uint8_t key;
 char daysOfTheWeek[7][10] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thurday", "Friday", "Saturday"};
 char dateString[35];
 char ui_buffer[UI_BUFFER_SIZE];
@@ -31,13 +36,14 @@ void setup() {
   pinMode(kBuzzerPin, OUTPUT);
   digitalWrite(kBuzzerPin, LOW);
   Serial.begin(38400);
+  led.begin();
   rtc.begin();
   u8g2.begin();
   u8g2.enableUTF8Print(); 
   attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, FALLING);
 //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 //rtc.adjust(DateTime(2020, 6, 18, 18, 40, 30));  
-  rtc.setCalibration(0xA0);
+  rtc.setCalibration(0xA6);
   Wire.beginTransmission(TMP112_ADDR);
   Wire.write(0x01);
   Wire.write(0x60);
@@ -47,16 +53,51 @@ void setup() {
   adjTimeAlarm();
   rtc.printAllBits();
   EEPROM.get(0x00, alarmtime1);
+  led.clear(); 
+  led.show();
+  key = 0;
+  ledstatus = true;
 }
 
 void loop() {  
    DateTime now = rtc.now();
-   if (now.hour() == (alarmtime1 >> 8) && now.minute() ==  (alarmtime1 & 0xff) && now.second()<=3) alarmbuzzer();
-    //lcdDisplayAll();
+  // if (now.hour() == (alarmtime1 >> 8) && now.minute() ==  (alarmtime1 & 0xff) && now.second()<=3) alarmbuzzer();
+   switch (key){
+    case 0:
+    lcdDisplayAll();
+    break;
+  case 1:
     lcdDisplayA();
-
+    //ledon();
+    break;
+  case 2:
+    lcdDisplayAll();
+    key = 0;
+    break;
+  case 3:
+    break;
+  default:
+   key = 0;
+   }
+   // lcdDisplayAll();
+    //lcdDisplayA();
+  //  if(now.minute() == 00 && now.hour() > 6 && now.hour() < 23 && now.second()<3 ) lighton();
+    if(now.minute() == 30 && now.hour() > 6 && now.hour() < 23 && now.second()<3 ) lighton();
+    if(now.minute() == 00 && now.hour() > 6 && now.hour() < 23 && now.second()<5 ) {
+      sound();
+      delay(300);
+      sound();
+      delay(300);
+      rainbow(8);
+      ledoff();
+      delay(1500);
+      rainbow(8);
+      ledoff();
+    }
+    
    // DateTime future (now + TimeSpan(7,12,30,6)); 
-    delay(995);
+    delay(1000);
+    checkButton();
 }
 
 void SetTime()
