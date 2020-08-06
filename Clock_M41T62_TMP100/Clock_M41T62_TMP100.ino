@@ -8,7 +8,7 @@
 
 #include <Wire.h>
 #include <avr/wdt.h>
-#include "M41T62.h"
+#include "M41T62CLOCK.h"
 #include <ShiftDisplay.h>
 #include <IRremote.h>
 
@@ -21,6 +21,7 @@
 #define HALFNOTE 8
 #define DOTTEDHALFNOTE 12
 #define WHOLENOTE 16
+#define UI_BUFFER_SIZE 64
 
 #define SLEEP_FOREVER 10
 #define SLEEP_8S 9
@@ -51,6 +52,7 @@ const int kLightPin = 4;
 const int kSpeakerPin = 12;
 const int kBatteryPin = A7;
 
+char ui_buffer[UI_BUFFER_SIZE];
 char dateString[35];
 char tempString[5];
 int n, st;
@@ -80,6 +82,7 @@ void setup()
   rtc.checkFlags();
   // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   InitTmp100Hdc1080();
+ // PrintTime();
   PrintTime();
   Serial.println("");
   Serial.println(F("T set [T]ime"));
@@ -234,19 +237,22 @@ void detectIR(){
        switch (results.value) {
          case 0xA32AB931:
          case 0x2F502FD:
-              if (lightstatus){
+              sound();
+              if (lightstatus)
+                  {
                    digitalWrite(kLightPin, LOW);
                    lightstatus = false;
-              } else            
-              {
-                analogWrite(kLightPin, lightvalue);
-                lightstatus = true;
-              }
+                  } else            
+                        {
+                         analogWrite(kLightPin, lightvalue);
+                         lightstatus = true;
+                        }                       
             break;
 
          case 0x39D41DC6:
          case 0x2F522DD:
 			if(lightstatus){
+          sound();
           for (int i = 0; i < 16 ; i++){
           if(lightvalue == 255)
           lightvalue = 255;
@@ -260,6 +266,7 @@ void detectIR(){
                      
          case 0xE0984BB6:
          case 0x2F518E7:
+          sound();
 			if(lightstatus){
           for (int i = 0; i < 16 ; i++){
             if (lightvalue == 0)
@@ -269,31 +276,39 @@ void detectIR(){
             delay(10);
           analogWrite(kLightPin, lightvalue);
              }
-         }           
+         }                  
             break;
             
          case 0x4EA240AE:
-           key++;
+            delay(50);
+            sound();
+            key++;
            if(key > 3)
             key = 0;
-           n = 0;  
+           n = 0;           
             break;
 
          case 0x4E87E0AB:
-			alarmstatus = !alarmstatus;
-				if (alarmstatus)
-					DisplayOn();
-				else
-					{
-					DisplayOff();
-					} 
+              delay(50);
+              sound();
+			        alarmstatus = !alarmstatus;
+				      if (alarmstatus)
+					      DisplayOn();
+				      else
+      					{
+      					DisplayOff();
+      					} 
             break;
 
          case 0x371A3C86:
+            delay(50);
+            sound();
             DisplayTempHum();
             break;
              
          case 0x143226DB:
+            delay(50);
+            sound();
             DisplayAll();
             break;
          }
@@ -309,17 +324,18 @@ void checkButton() {
       if (rtc.checkFlags() && alarmstatus) {
         byte week;
         DateTime now = rtc.now();
-        week = now.dayOfWeek();
+        week = now.dayOfTheWeek();
         //Serial.print("week:=");
         //Serial.println(week);
         if (week != 0 && week != 6)
           PlayMusic();
-        key = 0;
+          key = 0;
       }
       else
         key++;
       n = 0;
     }
+    sound();
   }
   if (digitalRead(kExtPowerPin) && n > 50) {
     n = 0;

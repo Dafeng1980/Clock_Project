@@ -39,10 +39,10 @@ void DisplayTime() {
 void DisplayTimeA() {
   uint8_t dow;
   DateTime now = rtc.now();
-  sprintf(dateString, "%02u=%02u d%1u", now.hour(), now.minute(), now.dayOfWeek());
+  sprintf(dateString, "%02u=%02u d%1u", now.hour(), now.minute(), now.dayOfTheWeek());
   display.set(dateString);
   display.show(500);
-  sprintf(dateString, "%02u %02u d%1u", now.hour(), now.minute(), now.dayOfWeek());
+  sprintf(dateString, "%02u %02u d%1u", now.hour(), now.minute(), now.dayOfTheWeek());
   display.set(dateString);
   display.show(500);
 }
@@ -88,7 +88,7 @@ void DisplayAll() {
   byte hum = gethumidity();
   int batteryval = map(getbatteryval(), 750, 980, 0, 100);
   DateTime time = rtc.now();
-  sprintf(dateString, " %4u-%02u-%02u d%1u %02u=%02u %2uC_%2uH P%2u ", time.year(), time.month(), time.day(), time.dayOfWeek(), time.hour(), time.minute(), temp, hum, batteryval);
+  sprintf(dateString, " %4u-%02u-%02u d%1u %02u=%02u %2uC_%2uH P%2u ", time.year(), time.month(), time.day(), time.dayOfTheWeek(), time.hour(), time.minute(), temp, hum, batteryval);
   String condition = dateString;
   condition = "        " + condition;
 
@@ -122,93 +122,212 @@ void DisplayOn() {
 void DisplayOff() {
   display.show("OFF", 3000, ALIGN_CENTER);
 }
-void PrintTime()
-{
-  DateTime time = rtc.now();
+//void PrintTime()
+//{
+//  DateTime time = rtc.now();
+//
+//  sprintf(dateString, "%4u-%02u-%02u %02u:%02u:%02u .",
+//    time.year(), time.month(), time.day(), time.hour(),
+//    time.minute(), time.second());
+//  Serial.println(dateString);
+//}
 
-  sprintf(dateString, "%4u-%02u-%02u %02u:%02u:%02u .",
-    time.year(), time.month(), time.day(), time.hour(),
-    time.minute(), time.second());
-  Serial.println(dateString);
+//void SetTime()
+//{
+//  uint8_t x;
+//  char date[11], time[8];
+//  Serial.println(F("Enter date format"));
+//  Serial.println(F("mmm-dd-yyyy hh-mm-ss sample input: Dec 26 2009 12:34:56"));
+//
+//  while (Serial.available() < 20)
+//  {
+//  }
+//  for (int i = 0; i < 11; i++) {
+//    date[i] = Serial.read();
+//  }
+//  x = Serial.read();
+//  for (int i = 0; i < 8; i++) {
+//    time[i] = Serial.read();
+//  }
+//
+//  delay(10);
+//  Serial.flush();
+//  rtc.adjust(DateTime(date, time));
+//  delay(10);
+//  Serial.println(date);
+//  DateTime now = rtc.now();
+//  x = now.dayOfWeek();
+//  //Serial.print("X=");
+//  //Serial.println(x);
+//  Wire.beginTransmission(0x68);   //M41T62_ADDRESS
+//  Wire.write(0x04);              // SQW Frequency / Day of Week
+//  Wire.write(x);
+//  Wire.endTransmission();
+//
+//  Serial.println(F("Set Successful"));
+//}
+//void SetAlarmTime() {
+//  uint8_t x, y;
+//  uint8_t sec, min, hour, day, month, mode;
+//  DateTime now = rtc.now();
+//  month = now.month();
+//  day = now.day();
+//  sec = 0;
+//
+//  Serial.println(F("Enter alarm time format (mode is 1 to 6, 4 is per day)"));
+//  Serial.println(F("hh:mm mode"));
+//
+//  while (Serial.available() < 8)
+//  {
+//  }
+//  x = Serial.read(); // hour: tens digit
+//  Serial.write(x);
+//  y = Serial.read(); // hour: ones digit
+//  Serial.write(y);
+//  hour = 10 * (x - '0') + (y - '0');
+//
+//  x = Serial.read(); // discard spacer
+//  Serial.write(x);
+//  x = Serial.read(); // min: tens digit
+//  Serial.write(x);
+//  y = Serial.read(); // min: ones digit
+//  Serial.write(y);
+//  min = 10 * (x - '0') + (y - '0');
+//
+//  x = Serial.read(); //  discard spacer
+//  Serial.write(x);
+//  y = Serial.read(); // alarmRepeat mode
+//  Serial.write(y);
+//  Serial.println(" ");
+//  mode = y - '0';
+//
+//  delay(10);
+//  Serial.flush();
+//  DateTime alarmTime(2019, month, day, hour, min, sec);
+//  rtc.alarmSet(alarmTime);
+//  rtc.alarmRepeat(mode);
+//  Serial.println(F("Set Successful"));
+//  //rtc.alarmRepeat(4);// set alarm repeat mode (once per day)
+//}
+
+void SetAlarmTime(){
+  uint8_t x;
+  uint8_t sec, min, hour, day, month, mode;
+  uint16_t year;
+  DateTime now = rtc.now();
+  year = now.year();
+  month = now.month();
+  day = now.day();
+  sec = 0;
+//  EEPROM.get(0x00, alarmtime1);
+//  Serial.print(F("alarmtime1 "));
+//  Serial.print(F("Time "));
+//  Serial.print(alarmtime1 >> 8);
+//  Serial.println(alarmtime1 & 0xff);
+//  Serial.println(" ");
+  Serial.println(F("Enter Alarm1 Time format"));
+  Serial.println(F("HH:MM  *Sample: 12:34 mode 1/per sec; 2/P min; 3/P hou; 4/P D 5/P M 6/P Y"));
+  x = read_data(); 
+//  alarmtime1 = (((ui_buffer[0] - '0')*10 + (ui_buffer[1] - '0')) << 8) | ((ui_buffer[3]-'0')*10 + (ui_buffer[4] - '0'));
+  hour =(ui_buffer[0] - '0')*10 + (ui_buffer[1] - '0');
+  min = (ui_buffer[3]-'0')*10 + (ui_buffer[4] - '0');
+  mode = ui_buffer[6] - '0';
+  DateTime alarmTime(year, month, day, hour, min, sec);
+  rtc.alarmSet(alarmTime);
+  rtc.alarmRepeat(mode);
+  Serial.println(F("Set Successful"));
 }
 
 void SetTime()
 {
-  uint8_t x;
-  char date[11], time[8];
+  uint8_t x,user_command;
+  char date[12], times[9];
   Serial.println(F("Enter date format"));
-  Serial.println(F("mmm-dd-yyyy hh-mm-ss sample input: Dec 26 2009 12:34:56"));
-
-  while (Serial.available() < 20)
-  {
+  Serial.println(F("mmm-dd-yyyy  *Sample: Dec 26 2019 "));
+  Serial.println(F("mmm//Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec"));
+  x = read_data();
+  for (int i = 0; i < 12; i++) {
+    date[i] = ui_buffer[i];
   }
-  for (int i = 0; i < 11; i++) {
-    date[i] = Serial.read();
+  Serial.print(F("X: "));
+  Serial.println(x, DEC);
+  Serial.print(F("Date: "));
+  if (x == 0){
+    DateTime now = rtc.now();
+    char buf1[] = "MMM DD YYYY";
+    now.toString(buf1);
+    for (int i = 0; i < 12; i++) {
+    date[i] = buf1[i];
+    }
   }
-  x = Serial.read();
-  for (int i = 0; i < 8; i++) {
-    time[i] = Serial.read();
-  }
-
-  delay(10);
-  Serial.flush();
-  rtc.adjust(DateTime(date, time));
-  delay(10);
+ // Serial.print(F("Date: "));
   Serial.println(date);
-  DateTime now = rtc.now();
-  x = now.dayOfWeek();
-  //Serial.print("X=");
-  //Serial.println(x);
-  Wire.beginTransmission(0x68);   //M41T62_ADDRESS
-  Wire.write(0x04);              // SQW Frequency / Day of Week
-  Wire.write(x);
-  Wire.endTransmission();
-
-  Serial.println(F("Set Successful"));
-}
-void SetAlarmTime() {
-  uint8_t x, y;
-  uint8_t sec, min, hour, day, month, mode;
-  DateTime now = rtc.now();
-  month = now.month();
-  day = now.day();
-  sec = 0;
-
-  Serial.println(F("Enter alarm time format (mode is 1 to 6, 4 is per day)"));
-  Serial.println(F("hh:mm mode"));
-
-  while (Serial.available() < 8)
-  {
+  delay(100);
+  Serial.println(F(" "));
+  Serial.println(F("Enter time format"));
+  Serial.println(F("hh-mm-ss  *Sample: 12:34:56"));
+  read_data();
+    for (int i = 0; i < 9; i++) {
+    times[i] = ui_buffer[i];
   }
-  x = Serial.read(); // hour: tens digit
-  Serial.write(x);
-  y = Serial.read(); // hour: ones digit
-  Serial.write(y);
-  hour = 10 * (x - '0') + (y - '0');
-
-  x = Serial.read(); // discard spacer
-  Serial.write(x);
-  x = Serial.read(); // min: tens digit
-  Serial.write(x);
-  y = Serial.read(); // min: ones digit
-  Serial.write(y);
-  min = 10 * (x - '0') + (y - '0');
-
-  x = Serial.read(); //  discard spacer
-  Serial.write(x);
-  y = Serial.read(); // alarmRepeat mode
-  Serial.write(y);
-  Serial.println(" ");
-  mode = y - '0';
-
-  delay(10);
-  Serial.flush();
-  DateTime alarmTime(2019, month, day, hour, min, sec);
-  rtc.alarmSet(alarmTime);
-  rtc.alarmRepeat(mode);
-  Serial.println(F("Set Successful"));
-  //rtc.alarmRepeat(4);// set alarm repeat mode (once per day)
+  Serial.print(F("Time: "));
+  Serial.println(times);
+  
+  do{
+  Serial.print(F("date&time: "));
+  Serial.print(date);
+  Serial.print(F(" "));
+  Serial.println(times); 
+  Serial.println(F(" Save To RTC Please Enter: \"Y\" "));
+  Serial.println(F(" Quit The RTC Don't Save: \"Q\" "));
+  user_command = read_char();
+  Serial.println((char)user_command);
+  switch (user_command)
+  {
+    case 'y':
+    case 'Y':
+    
+    Serial.println(F("Save To RTC "));
+    rtc.adjust(DateTime(date, times));
+    delay(10);
+    Serial.println(date);
+//    DateTime now = rtc.now();
+    
+//    x = now.dayOfTheWeek();
+//    //Serial.print("X=");
+//    //Serial.println(x);
+//    Wire.beginTransmission(0x68);   //M41T62_ADDRESS
+//    Wire.write(0x04);              // SQW Frequency / Day of Week
+//    Wire.write(x);
+//    Wire.endTransmission();
+    Serial.println(F("Set Successful"));    
+    break;
+    
+    case 'q':
+    case 'Q':   
+    Serial.println(F("Quit & Don't Save RTC"));  
+    break;
+    
+    default:
+       if (user_command != 'y' || user_command != 'Y' || user_command != 'Q' || user_command != 'q')
+        Serial.println(F("Invalid Selection !!"));
+     break;
+  }
+  }
+    while (user_command != 'y' && user_command != 'Y' && user_command != 'Q' && user_command != 'q');
+    Serial.println(F(" Exit Set Time"));
 }
+
+
+void PrintTime()
+     {
+          DateTime time = rtc.now();
+
+            sprintf(dateString, "%4u-%02u-%02u %02u:%02u:%02u .",
+           time.year(), time.month(), time.day(), time.hour(),
+           time.minute(), time.second());
+           Serial.println(dateString);
+      }
 
 int getbatteryval() {
   int sum = 0;
@@ -217,6 +336,7 @@ int getbatteryval() {
   }
   return sum = sum / 3;
 }
+
 int gettemperature() {
   Wire.beginTransmission(kTmp100Addr);
   Wire.write(0x01);
@@ -260,6 +380,11 @@ double gethumidity() {
   return  fhum;
 }
 
+void sound(){
+         tone(kSpeakerPin, 3530);
+          delay(50);
+           noTone(kSpeakerPin);
+    }
 void PlayMusic() {
   irrecv.resume();
   for (int i = 0; i < 50; i++) {
@@ -366,6 +491,42 @@ void m24lc128readbytes(uint16_t address, int count, uint8_t * dest)
     dest[i++] = Wire.read();
   }
 }
+
+uint8_t read_data()
+{
+  uint8_t index = 0; //index to hold current location in ui_buffer
+  int c; // single character used to store incoming keystrokes
+  while (index < UI_BUFFER_SIZE-1)
+  {
+    c = Serial.read(); //read one character
+    if (((char) c == '\r') || ((char) c == '\n')) break; // if carriage return or linefeed, stop and return data
+    if ( ((char) c == '\x7F') || ((char) c == '\x08') )   // remove previous character (decrement index) if Backspace/Delete key pressed      index--;
+    {
+      if (index > 0) index--;
+    }
+    else if (c >= 0)
+    {
+      ui_buffer[index++]=(char) c; // put character into ui_buffer
+    }
+  }
+  ui_buffer[index]='\0';  // terminate string with NULL
+
+  if ((char) c == '\r')    // if the last character was a carriage return, also clear linefeed if it is next character
+  {
+    delay(10);  // allow 10ms for linefeed to appear on serial pins
+    if (Serial.peek() == '\n') Serial.read(); // if linefeed appears, read it and throw it away
+  }
+
+  return index; // return number of characters, not including null terminator
+}
+
+int8_t read_char()
+{
+  read_data();
+  return(ui_buffer[0]);
+}
+
+
 
 void powerdown(byte period)
 {
