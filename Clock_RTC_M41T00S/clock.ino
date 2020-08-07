@@ -41,6 +41,15 @@ void lcdDisplayAll(){
       u8g2.print(now.day(), DEC);
       u8g2.print(' ');
       u8g2.print(daysOfTheWeek[now.dayOfTheWeek()]);
+         int val = getbatteryval();
+  Serial.print("BATTER_VAL:=");
+  Serial.println(val);
+  val = map(val, 430, 600, 0, 100);
+  u8g2.print(' ');
+  u8g2.print(val);
+  u8g2.print("%");
+  Serial.print("BATTER_VAL(%):=");
+  Serial.println(val);
       u8g2.setFont(u8g2_font_10x20_tr);
       u8g2.setCursor(0, 32);
       sprintf(dateString, "%02u:%02u:%02u", now.hour(), now.minute(), now.second());
@@ -49,6 +58,7 @@ void lcdDisplayAll(){
       u8g2.print(gettemp(), 1);      
       u8g2.sendBuffer();
 }
+
  void lcdDisplayA(){      
       DateTime now = rtc.now();
       u8g2.clearBuffer();
@@ -83,10 +93,11 @@ float gettemp(){
 }
 
 void sound(){
-         tone(kBuzzerPin, 2100);
-          delay(100);
+         tone(kBuzzerPin, 2800);
+          delay(60);
            noTone(kBuzzerPin);
     }
+    
 void alarmbuzzer(){
   for (int i = 0; i < 602; i++) {
     noTone(kBuzzerPin);
@@ -102,20 +113,21 @@ void alarmbuzzer(){
 //    if (irrecv.decode(&results)){
 //      break;
 //    }
-    tone(kBuzzerPin, 2050);
+    tone(kBuzzerPin, 2850);
     delay(80);
 }
   noTone(kBuzzerPin);
 }
-    void PrintTime()
-{
-  DateTime time = rtc.now();
 
-  sprintf(dateString, "%4u-%02u-%02u %02u:%02u:%02u .",
-    time.year(), time.month(), time.day(), time.hour(),
-    time.minute(), time.second());
-  Serial.println(dateString);
-}
+void PrintTime()
+     {
+          DateTime time = rtc.now();
+
+            sprintf(dateString, "%4u-%02u-%02u %02u:%02u:%02u .",
+           time.year(), time.month(), time.day(), time.hour(),
+           time.minute(), time.second());
+           Serial.println(dateString);
+      }
 
 uint8_t read_data()
 {
@@ -154,8 +166,9 @@ int8_t read_char()
 void ledoff(){
     led.clear(); 
     delay(10);
-  led.show();
+    led.show();
 }
+
 void ledon(){
       led.clear(); // Set all pixel colors to 'off'
    led.setBrightness(57);
@@ -169,6 +182,7 @@ void ledon(){
 }
 
 void lighton(){
+    sound();
     led.clear(); // Set all pixel colors to 'off'
   //  led.setBrightness(127);
   // The first NeoPixel in a strand is #0, second is 1, all the way up
@@ -188,11 +202,11 @@ void lighton(){
 //            beep(30,i);
 //          }
 //          delay(500);
-          beep(20,600);
-            delay(200);
-          beep(20,600);
-            delay(200);
-          beep(20,600);
+//          beep(20,600);
+//            delay(200);
+//          beep(20,600);
+//            delay(200);
+//          beep(20,600);
   led.clear(); 
   led.show();
 }
@@ -201,43 +215,6 @@ void beep(int bCount,int bDelay){
  // if (mute) return;
   for (int i = 0; i<=bCount; i++){digitalWrite(kBuzzerPin,HIGH);for(int i2=0; i2<bDelay; i2++){__asm__("nop\n\t");}digitalWrite(kBuzzerPin,LOW);for(int i2=0; i2<bDelay; i2++){__asm__("nop\n\t");}}
 }
-
-void checkButton(){
-  if (digitalRead(kButtonPin) == 0) {
-    delay(5);
-    if (digitalRead(kButtonPin) == 0);
-    {
-        if (ledstatus){
-              ledon();
-            ledstatus = false;
-              } 
-              else            
-              {
-                ledoff();
-                ledstatus = true;
-              }
-        key++;
-    }
-  }
-//  if (digitalRead(kExtPowerPin) && n > 50) {
-//    n = 0;
-//  }
-//  if (getbatteryval() <= 768) {
-//    digitalWrite(kLedPin, HIGH);
-//    if (!((n + 1) % 60)) {
-//      DispalyShutdown();
-//      attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, FALLING);
-//      delay(10);
-//      powerdown(SLEEP_FOREVER);
-//      detachInterrupt(digitalPinToInterrupt(kButtonPin));
-//
-//    }
-//
-//  }
-//  if (getbatteryval() > 780) {
-//    digitalWrite(kLedPin, LOW);
-//  }
- }
 
  void rainbow(int wait) {
   // Hue of first pixel runs 5 complete loops through the color wheel.
@@ -260,4 +237,98 @@ void checkButton(){
     led.show(); // Update strip with new contents
     delay(wait);  // Pause for a moment
   }
+}
+
+int getbatteryval() {
+  int sum = 0;
+  for (int i = 0; i < 4; i++) {
+    sum += analogRead(kBatteryPin);
+  }
+  return sum = sum / 4;
+}
+
+void SetTime()
+{
+  uint8_t x,user_command;
+  char date[12], times[9];
+  Serial.println(F("Enter date format"));
+  Serial.println(F("mmm-dd-yyyy  *Sample: Dec 26 2019 "));
+  Serial.println(F("mmm//Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec"));
+  x = read_data();
+  for (int i = 0; i < 12; i++) {
+    date[i] = ui_buffer[i];
+  }
+  Serial.print(F("X: "));
+  Serial.println(x, DEC);
+  Serial.print(F("Date: "));
+  if (x == 0){
+    DateTime now = rtc.now();
+    char buf1[] = "MMM DD YYYY";
+    now.toString(buf1);
+    for (int i = 0; i < 12; i++) {
+    date[i] = buf1[i];
+    }
+  }
+ // Serial.print(F("Date: "));
+  Serial.println(date);
+  delay(100);
+  Serial.println(F(" "));
+  Serial.println(F("Enter time format"));
+  Serial.println(F("hh-mm-ss  *Sample: 12:34:56"));
+  read_data();
+    for (int i = 0; i < 9; i++) {
+    times[i] = ui_buffer[i];
+  }
+  Serial.print(F("Time: "));
+  Serial.println(times);
+  
+  do{
+  Serial.print(F("date&time: "));
+  Serial.print(date);
+  Serial.print(F(" "));
+  Serial.println(times); 
+  Serial.println(F(" Save To RTC Please Enter: \"Y\" "));
+  Serial.println(F(" Quit The RTC Don't Save: \"Q\" "));
+  user_command = read_char();
+  Serial.println((char)user_command);
+  switch (user_command)
+  {
+    case 'y':
+    case 'Y':
+    Serial.println(F("Save To RTC "));
+    rtc.adjust(DateTime(date, times));
+    Serial.println(F("Set Successful"));
+    break;
+    case 'q':
+    case 'Q':
+    Serial.println(F("Quit & Don't Save RTC"));
+    break;
+    default:
+       if (user_command != 'y' || user_command != 'Y' || user_command != 'Q' || user_command != 'q')
+       Serial.println(F("Invalid Selection !!"));
+     break;
+  }
+  }
+  while (user_command != 'y' && user_command != 'Y' && user_command != 'Q' && user_command != 'q');
+
+Serial.println(F(" Exit Set Time"));
+}
+
+void SetAlarmTime(){
+  uint8_t x;
+  EEPROM.get(0x00, alarmtime1);
+  Serial.print(F("alarmtime1 "));
+  Serial.print(F("Time "));
+  Serial.print(alarmtime1 >> 8);
+  Serial.println(alarmtime1 & 0xff);
+  Serial.println(" ");
+  Serial.println(F("Enter Alarm1 Time format"));
+  Serial.println(F("HH:MM  *Sample: 12:34 "));
+  x = read_data(); 
+  alarmtime1 = (((ui_buffer[0] - '0')*10 + (ui_buffer[1] - '0')) << 8) | ((ui_buffer[3]-'0')*10 + (ui_buffer[4] - '0'));
+  Serial.print(F("alarmtime1 "));
+  Serial.print(F("Time "));
+  Serial.print(alarmtime1 >> 8);
+  Serial.println(alarmtime1 & 0xff);
+  EEPROM.put(0x00, alarmtime1);
 }

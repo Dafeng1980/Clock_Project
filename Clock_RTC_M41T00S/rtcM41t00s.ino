@@ -1,7 +1,9 @@
+
 #include "RTCm41t00slib.h"
 #include <U8g2lib.h>
 #include <stdint.h>
 #include <EEPROM.h>
+#include <IRremote.h>
 #include <Adafruit_NeoPixel.h>
 
 #ifdef U8X8_HAVE_HW_I2C
@@ -11,12 +13,15 @@
 #define UI_BUFFER_SIZE 64
 #define SERIAL_TERMINATOR '\n'
 #define TMP112_ADDR  0x49
-#define PIN 7
+#define PIN 20
+#define IRPIN 21
 
 Adafruit_NeoPixel led(6, PIN, NEO_GRB + NEO_KHZ400);
 U8G2_SSD1306_128X32_UNIVISION_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 
 RTC_M41T00S rtc;
+IRrecv irrecv(IRPIN);
+decode_results results;
 
 volatile bool pressedButton, n, ledstatus;
 volatile uint8_t key;
@@ -25,16 +30,24 @@ char dateString[35];
 char ui_buffer[UI_BUFFER_SIZE];
 uint16_t alarmtime1,alarmtime2;
 const uint8_t kBuzzerPin = 15;
-const int kButtonPin = 6;
+const uint8_t kPowerSwitch = 10;
+const uint8_t kButtonPin = 7;
+const uint8_t kExtPowerPin = 22;
+const int kBatteryPin = A0;
+uint16_t nSysT = 0;
 
 void WakeUp() {
   pressedButton = true;
 }
 
 void setup() {
-  pinMode(kButtonPin, INPUT);
+  pinMode(kButtonPin, INPUT_PULLUP);
+  pinMode(kExtPowerPin, INPUT);
   pinMode(kBuzzerPin, OUTPUT);
-  digitalWrite(kBuzzerPin, LOW);
+  pinMode(kPowerSwitch, OUTPUT);
+   digitalWrite(kPowerSwitch, HIGH);
+   digitalWrite(kBuzzerPin, LOW);
+  analogReference(INTERNAL2V56);
   Serial.begin(38400);
   led.begin();
   rtc.begin();
@@ -53,15 +66,19 @@ void setup() {
   adjTimeAlarm();
   rtc.printAllBits();
   EEPROM.get(0x00, alarmtime1);
-  led.clear(); 
-  led.show();
   key = 0;
   ledstatus = true;
+  irrecv.enableIRIn();
+  digitalWrite(kPowerSwitch, LOW);
+  delay(50);
+  ledoff();
 }
 
 void loop() {  
    DateTime now = rtc.now();
-  // if (now.hour() == (alarmtime1 >> 8) && now.minute() ==  (alarmtime1 & 0xff) && now.second()<=3) alarmbuzzer();
+  byte extp = digitalRead(kExtPowerPin);
+  Serial.print(F("kExtPowerPin:="));
+  Serial.println(extp);
    switch (key){
     case 0:
     lcdDisplayAll();
@@ -79,109 +96,155 @@ void loop() {
   default:
    key = 0;
    }
-   // lcdDisplayAll();
-    //lcdDisplayA();
-  //  if(now.minute() == 00 && now.hour() > 6 && now.hour() < 23 && now.second()<3 ) lighton();
-    if(now.minute() == 30 && now.hour() > 6 && now.hour() < 23 && now.second()<3 ) lighton();
-    if(now.minute() == 00 && now.hour() > 6 && now.hour() < 23 && now.second()<5 ) {
-      sound();
-      delay(300);
-      sound();
-      delay(300);
-      rainbow(8);
-      ledoff();
-      delay(1500);
-      rainbow(8);
-      ledoff();
-    }
-    
+    if(now.minute() == 30 && now.hour() > 6 && now.hour() < 23 && now.second()<2 ) lighton();
+    if(now.minute() == 00 && now.hour() > 6 && now.hour() < 23 && now.second()<5 ) 
+      {
+        sound();
+        delay(300);
+        sound();
+        delay(300);
+        rainbow(10);
+        ledoff();
+      }
+      
+      checkButton();
+      detectIR();
    // DateTime future (now + TimeSpan(7,12,30,6)); 
     delay(1000);
-    checkButton();
 }
 
-void SetTime()
-{
-  uint8_t x,user_command;
-  char date[12], times[9];
-  Serial.println(F("Enter date format"));
-  Serial.println(F("mmm-dd-yyyy  *Sample: Dec 26 2019 "));
-  Serial.println(F("mmm//Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec"));
-  x = read_data();
-  for (int i = 0; i < 12; i++) {
-    date[i] = ui_buffer[i];
-  }
-  Serial.print(F("X: "));
-  Serial.println(x, DEC);
-  Serial.print(F("Date: "));
-  if (x == 0){
-    DateTime now = rtc.now();
-    char buf1[] = "MMM DD YYYY";
-    now.toString(buf1);
-    for (int i = 0; i < 12; i++) {
-    date[i] = buf1[i];
+void checkButton(){
+  if (digitalRead(kButtonPin) == 0) {
+    delay(5);
+    if (digitalRead(kButtonPin) == 0);
+    {
+        if (ledstatus)
+           {
+              ledon();
+              ledstatus = false;
+           } 
+        else            
+            {
+                ledoff();
+                ledstatus = true;
+            }            
+        key++;
+        sound();
     }
   }
- // Serial.print(F("Date: "));
-  Serial.println(date);
-  delay(100);
-  Serial.println(F(" "));
-  Serial.println(F("Enter time format"));
-  Serial.println(F("hh-mm-ss  *Sample: 12:34:56"));
-  read_data();
-    for (int i = 0; i < 9; i++) {
-    times[i] = ui_buffer[i];
-  }
-  Serial.print(F("Time: "));
-  Serial.println(times);
-  
-  do{
-  Serial.print(F("date&time: "));
-  Serial.print(date);
-  Serial.print(F(" "));
-  Serial.println(times); 
-  Serial.println(F(" Save To RTC Please Enter: \"Y\" "));
-  Serial.println(F(" Quit The RTC Don't Save: \"Q\" "));
-  user_command = read_char();
-  Serial.println((char)user_command);
-  switch (user_command)
-  {
-    case 'y':
-    case 'Y':
-    Serial.println(F("Save To RTC "));
-    rtc.adjust(DateTime(date, times));
-    Serial.println(F("Set Successful"));
-    break;
-    case 'q':
-    case 'Q':
-    Serial.println(F("Quit & Don't Save RTC"));
-    break;
-    default:
-       if (user_command != 'y' || user_command != 'Y' || user_command != 'Q' || user_command != 'q')
-       Serial.println(F("Invalid Selection !!"));
-     break;
-  }
-  }
-  while (user_command != 'y' && user_command != 'Y' && user_command != 'Q' && user_command != 'q');
+//  if (digitalRead(kExtPowerPin) && n > 50) {
+//    n = 0;
+//  }
+//  if (getbatteryval() <= 768) {
+//    digitalWrite(kLedPin, HIGH);
+//    if (!((n + 1) % 60)) {
+//      DispalyShutdown();
+//      attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, FALLING);
+//      delay(10);
+//      powerdown(SLEEP_FOREVER);
+//      detachInterrupt(digitalPinToInterrupt(kButtonPin));
+//
+//    }
+//
+//  }
+//  if (getbatteryval() > 780) {
+//    digitalWrite(kLedPin, LOW);
+//  }
+ }
 
-Serial.println(F(" Exit Set Time"));
+ void T2_init(){
+ // OCR = 0x00;
+  TCNT2 =0x00;
+  TCCR2 = 0x03;     //0x03 clkI/O/64 per 2ms! 0x04 clkI/O/256  per 8ms!
+  TIMSK |= (1 << TOIE2); 
 }
 
-void SetAlarmTime(){
-  uint8_t x;
-  EEPROM.get(0x00, alarmtime1);
-  Serial.print(F("alarmtime1 "));
-  Serial.print(F("Time "));
-  Serial.print(alarmtime1 >> 8);
-  Serial.println(alarmtime1 & 0xff);
-  Serial.println(" ");
-  Serial.println(F("Enter Alarm1 Time format"));
-  Serial.println(F("HH:MM  *Sample: 12:34 "));
-  x = read_data(); 
-  alarmtime1 = (((ui_buffer[0] - '0')*10 + (ui_buffer[1] - '0')) << 8) | ((ui_buffer[3]-'0')*10 + (ui_buffer[4] - '0'));
-  Serial.print(F("alarmtime1 "));
-  Serial.print(F("Time "));
-  Serial.print(alarmtime1 >> 8);
-  Serial.println(alarmtime1 & 0xff);
-  EEPROM.put(0x00, alarmtime1);
+ISR(TIMER2_OVF_vect)
+{
+      nSysT++;
+      if(nSysT >= 60000)  // after 2min reset 
+    {
+      nSysT = 0;
+    }
+
+}
+
+void detectIR(){
+  if (irrecv.decode(&results)) {
+    Serial.println(results.value, HEX);
+
+       switch (results.value) {
+         case 0xA32AB931:
+         case 0x2F502FD:
+              sound();
+//              if (lightstatus)
+//                  {
+//                   digitalWrite(kLightPin, LOW);
+//                   lightstatus = false;
+//                  } else            
+//                        {
+//                         analogWrite(kLightPin, lightvalue);
+//                         lightstatus = true;
+//                        }                       
+            break;
+
+         case 0x39D41DC6:
+         case 0x2F522DD:
+ //     if(lightstatus){
+          sound();
+//          for (int i = 0; i < 16 ; i++){
+//          if(lightvalue == 255)
+//          lightvalue = 255;
+//          else 
+//          lightvalue++;
+//          delay(10);
+//          analogWrite(kLightPin, lightvalue);
+//             }
+//         }           
+           break;
+                     
+         case 0xE0984BB6:
+         case 0x2F518E7:
+          sound();
+//      if(lightstatus){
+//          for (int i = 0; i < 16 ; i++){
+//            if (lightvalue == 0)
+//            lightvalue = 0;
+//            else
+//            lightvalue--;
+//            delay(10);
+//          analogWrite(kLightPin, lightvalue);
+//             }
+//         }                  
+            break;
+            
+         case 0x4EA240AE:
+            delay(50);
+            sound();
+//            key++;
+//           if(key > 3)
+//            key = 0;
+//           n = 0;           
+            break;
+
+         case 0x4E87E0AB:
+              delay(50);
+              sound();
+            break;
+
+         case 0x371A3C86:
+            delay(50);
+            sound();
+            //DisplayTempHum();
+            break;
+             
+         case 0x143226DB:
+            delay(50);
+            sound();
+           // DisplayAll();
+            break;
+         }
+   irrecv.resume();
+   }
+  
 }
