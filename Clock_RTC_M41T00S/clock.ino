@@ -44,7 +44,7 @@ void lcdDisplayAll(){
          int val = getbatteryval();
   Serial.print("BATTER_VAL:=");
   Serial.println(val);
-  val = map(val, 430, 600, 0, 100);
+  val = map(val, 430, 565, 0, 100);
   u8g2.print(' ');
   u8g2.print(val);
   u8g2.print("%");

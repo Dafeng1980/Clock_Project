@@ -76,7 +76,7 @@ void setup()
   // attachInterrupt(digitalPinToInterrupt(kButtonPin), buttonPressInterrupt, FALLING);
   analogReference(INTERNAL1V1);
   pressedButton = false;
-  alarmstatus = true;
+  alarmstatus = false;
   Serial.begin(38400);
   rtc.begin();
   rtc.checkFlags();
@@ -153,7 +153,8 @@ void loop()
     n = 0;
     st = 0;
   }
-  switch (key)
+  
+switch (key)
   {
   case 0:
     DisplayTime();
@@ -206,8 +207,9 @@ void loop()
     }
     break;
   }
-  if (n == 290)
-  {
+  
+if (n == 290)
+   {
     DispalyShutdown();
     attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, FALLING);
     digitalWrite(kLightPin, LOW);
@@ -215,7 +217,8 @@ void loop()
     delay(10);
     powerdown(SLEEP_FOREVER);
     detachInterrupt(digitalPinToInterrupt(kButtonPin));
-  }
+   }
+   
   n++;
   detectIR();
   checkButton();

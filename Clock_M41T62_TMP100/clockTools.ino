@@ -14,6 +14,12 @@ void InitTmp100Hdc1080() {
 
 void DisplayTime() {
   DateTime now = rtc.now();
+  if(now.minute() == 00 && now.hour() > 6 && now.hour() < 23 && now.second()<2 ) sound();
+  if(now.minute() == 30 && now.hour() > 6 && now.hour() < 23 && now.second()<1 ) 
+    {
+      sound();
+      delay(600);     
+    }
   sprintf(dateString, "%02u %02u %02u", now.hour(), now.minute(), now.second());
   display.set(dateString);
   display.setDot(0, true);
@@ -39,6 +45,12 @@ void DisplayTime() {
 void DisplayTimeA() {
   uint8_t dow;
   DateTime now = rtc.now();
+  if(now.minute() == 00 && now.hour() > 6 && now.hour() < 23 && now.second()<2 ) sound();
+  if(now.minute() == 30 && now.hour() > 6 && now.hour() < 23 && now.second()<1 ) 
+    {
+      sound();
+      delay(600);     
+    }
   sprintf(dateString, "%02u=%02u d%1u", now.hour(), now.minute(), now.dayOfTheWeek());
   display.set(dateString);
   display.show(500);
@@ -122,15 +134,6 @@ void DisplayOn() {
 void DisplayOff() {
   display.show("OFF", 3000, ALIGN_CENTER);
 }
-//void PrintTime()
-//{
-//  DateTime time = rtc.now();
-//
-//  sprintf(dateString, "%4u-%02u-%02u %02u:%02u:%02u .",
-//    time.year(), time.month(), time.day(), time.hour(),
-//    time.minute(), time.second());
-//  Serial.println(dateString);
-//}
 
 //void SetTime()
 //{
@@ -219,23 +222,22 @@ void SetAlarmTime(){
   month = now.month();
   day = now.day();
   sec = 0;
-//  EEPROM.get(0x00, alarmtime1);
-//  Serial.print(F("alarmtime1 "));
-//  Serial.print(F("Time "));
-//  Serial.print(alarmtime1 >> 8);
-//  Serial.println(alarmtime1 & 0xff);
-//  Serial.println(" ");
   Serial.println(F("Enter Alarm1 Time format"));
   Serial.println(F("HH:MM  *Sample: 12:34 mode 1/per sec; 2/P min; 3/P hou; 4/P D 5/P M 6/P Y"));
   x = read_data(); 
-//  alarmtime1 = (((ui_buffer[0] - '0')*10 + (ui_buffer[1] - '0')) << 8) | ((ui_buffer[3]-'0')*10 + (ui_buffer[4] - '0'));
   hour =(ui_buffer[0] - '0')*10 + (ui_buffer[1] - '0');
   min = (ui_buffer[3]-'0')*10 + (ui_buffer[4] - '0');
   mode = ui_buffer[6] - '0';
   DateTime alarmTime(year, month, day, hour, min, sec);
   rtc.alarmSet(alarmTime);
   rtc.alarmRepeat(mode);
-  Serial.println(F("Set Successful"));
+  Serial.print(F("Alarm Set Time: "));
+  Serial.print(hour);
+  Serial.print(F(":"));
+  Serial.print(min);
+  Serial.println(F(" "));
+  
+  Serial.println(F("Set Alarm Successful"));
 }
 
 void SetTime()
