@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <EEPROM.h>
 #include <IRremote.h>
-#include <Adafruit_NeoPixel.h>
 
 #ifdef U8X8_HAVE_HW_I2C
 #include <Wire.h>
@@ -15,15 +14,16 @@
 #define TMP112_ADDR  0x49
 #define PIN 20
 #define IRPIN 21
+#define SYSTMMAX 30000
 
-Adafruit_NeoPixel led(6, PIN, NEO_GRB + NEO_KHZ400);
 U8G2_SSD1306_128X32_UNIVISION_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 
 RTC_M41T00S rtc;
 IRrecv irrecv(IRPIN);
 decode_results results;
+DateTime nowtime;
 
-volatile bool pressedButton, n, ledstatus;
+volatile bool pressedButton, n, ledstatus, batSmp, tempSmp, buzzSmp, timeSmp;
 volatile uint8_t key;
 char daysOfTheWeek[7][10] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thurday", "Friday", "Saturday"};
 char dateString[35];
@@ -33,8 +33,18 @@ const uint8_t kBuzzerPin = 15;
 const uint8_t kPowerSwitch = 10;
 const uint8_t kButtonPin = 7;
 const uint8_t kExtPowerPin = 22;
+const uint8_t kLedPin = 20;
 const int kBatteryPin = A0;
 uint16_t nSysT = 0;
+uint16_t nProtT = 0;
+
+static uint8_t cBatSmp = 0;
+static uint8_t nhours = 0;
+static int nBatsum = 0;
+static int batVal = 0;
+static float tempVal = 0;
+
+
 
 void WakeUp() {
   pressedButton = true;
@@ -45,40 +55,62 @@ void setup() {
   pinMode(kExtPowerPin, INPUT);
   pinMode(kBuzzerPin, OUTPUT);
   pinMode(kPowerSwitch, OUTPUT);
-   digitalWrite(kPowerSwitch, HIGH);
-   digitalWrite(kBuzzerPin, LOW);
+  pinMode(kLedPin, OUTPUT);
+  digitalWrite(kPowerSwitch, HIGH);
+  digitalWrite(kBuzzerPin, LOW);
+  digitalWrite(kPowerSwitch, LOW);
   analogReference(INTERNAL2V56);
   Serial.begin(38400);
-  led.begin();
   rtc.begin();
+  rtc.setCalibration(0xA6);
   u8g2.begin();
   u8g2.enableUTF8Print(); 
+  T2_init();
+  Tmp112_init();
   attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, FALLING);
-//rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-//rtc.adjust(DateTime(2020, 6, 18, 18, 40, 30));  
-  rtc.setCalibration(0xA6);
-  Wire.beginTransmission(TMP112_ADDR);
-  Wire.write(0x01);
-  Wire.write(0x60);
-  Wire.write(0xA0);
-  Wire.endTransmission();
-  delay(50); 
+//rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); 
   adjTimeAlarm();
-  rtc.printAllBits();
   EEPROM.get(0x00, alarmtime1);
   key = 0;
   ledstatus = true;
+  batSmp = true;
+  tempSmp = false;
+  buzzSmp = true;
+  timeSmp = true;
   irrecv.enableIRIn();
-  digitalWrite(kPowerSwitch, LOW);
-  delay(50);
-  ledoff();
+  rtc.printAllBits(); 
+  delay(50); 
 }
 
 void loop() {  
-   DateTime now = rtc.now();
-  byte extp = digitalRead(kExtPowerPin);
-  Serial.print(F("kExtPowerPin:="));
-  Serial.println(extp);
+  uint16_t  nTimeTmp = 0;
+  unsigned int uctmp = 0;
+  nowtime = rtc.now();
+   
+  if(batSmp)
+    {
+      uctmp = analogRead(kBatteryPin);
+      delay(20);
+      nBatsum += uctmp;
+      cBatSmp++;
+      if (cBatSmp >= 4)
+          {
+            batVal = nBatsum >> 2;
+            batVal = map(batVal, 430, 565, 0, 100);
+            nBatsum = 0;
+            cBatSmp = 0;
+          }
+      batSmp = 0;
+      tempSmp = 1;   
+    }
+    
+  else if(tempSmp)
+     {
+       tempVal = gettemp();
+       tempSmp = 0;
+       batSmp = 1;
+     }
+     
    switch (key){
     case 0:
     lcdDisplayAll();
@@ -96,42 +128,57 @@ void loop() {
   default:
    key = 0;
    }
-    if(now.minute() == 30 && now.hour() > 6 && now.hour() < 23 && now.second()<2 ) lighton();
-    if(now.minute() == 00 && now.hour() > 6 && now.hour() < 23 && now.second()<5 ) 
+    if(nowtime.minute() == 30 && nowtime.hour() > 6 && nowtime.hour() < 23 && buzzSmp ) halfsound();
+    
+    if(nowtime.minute() == 0 && nowtime.hour() > 6 && nowtime.hour() < 23 && buzzSmp ) 
       {
-        sound();
-        delay(300);
-        sound();
-        delay(300);
-        rainbow(10);
-        ledoff();
+        if (timeSmp)
+          {
+            nhours = nowtime.twelveHour();
+            timeSmp = false;
+          }
+          cli();
+					nTimeTmp = SYSTMMAX + nSysT - nProtT;
+					sei();
+					if(nTimeTmp >= SYSTMMAX)
+					{
+						nTimeTmp = nTimeTmp - SYSTMMAX;
+					}
+          if (nTimeTmp >= 650)
+          {
+            sound();
+            nhours--;
+            if(nhours == 0)
+              {
+                  buzzSmp = false;
+                  timeSmp = true;
+              }
+             cli();
+             nProtT = nSysT;
+             sei(); 
+          } 
       }
       
       checkButton();
       detectIR();
    // DateTime future (now + TimeSpan(7,12,30,6)); 
-    delay(1000);
+   //  delay(100);
 }
 
 void checkButton(){
-  if (digitalRead(kButtonPin) == 0) {
-    delay(5);
-    if (digitalRead(kButtonPin) == 0);
+  if (digitalRead(kButtonPin) == 0) 
     {
-        if (ledstatus)
-           {
-              ledon();
-              ledstatus = false;
-           } 
-        else            
-            {
-                ledoff();
-                ledstatus = true;
-            }            
-        key++;
-        sound();
+
+      delay(5);
+      if (digitalRead(kButtonPin) == 0);
+        {           
+          key++;
+          sound();
+        }
     }
-  }
+
+  if (nowtime.minute() != 0 && nowtime.minute() != 30 && buzzSmp == 0) buzzSmp = true;
+      
 //  if (digitalRead(kExtPowerPin) && n > 50) {
 //    n = 0;
 //  }
@@ -153,16 +200,18 @@ void checkButton(){
  }
 
  void T2_init(){
- // OCR = 0x00;
+   cli();
+  OCR2 = 0x00;
   TCNT2 =0x00;
   TCCR2 = 0x03;     //0x03 clkI/O/64 per 2ms! 0x04 clkI/O/256  per 8ms!
-  TIMSK |= (1 << TOIE2); 
+  TIMSK |= (1 << TOIE2);
+  sei(); 
 }
 
 ISR(TIMER2_OVF_vect)
 {
       nSysT++;
-      if(nSysT >= 60000)  // after 2min reset 
+      if(nSysT >= SYSTMMAX)  // after 1min reset 
     {
       nSysT = 0;
     }
