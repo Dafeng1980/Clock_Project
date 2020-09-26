@@ -193,14 +193,6 @@ void beep(int bCount,int bDelay)
       }
    }
 
-int getbatteryval() {
-  int sum = 0;
-  for (int i = 0; i < 4; i++) {
-    sum += analogRead(kBatteryPin);
-  }
-  return sum = sum / 4;
-}
-
 void SetTime()
 {
   uint8_t x,user_command;
