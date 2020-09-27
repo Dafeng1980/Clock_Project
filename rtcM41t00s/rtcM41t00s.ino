@@ -128,7 +128,11 @@ void loop() {
   default:
    key = 0;
    }
-    if(nowtime.minute() == 30 && nowtime.hour() > 6 && nowtime.hour() < 23 && buzzSmp ) halfsound();
+    if(nowtime.minute() == 30 && nowtime.hour() > 6 && nowtime.hour() < 23 && buzzSmp )
+        {
+          halfsound();
+          buzzSmp = false;
+        }
     
     if(nowtime.minute() == 0 && nowtime.hour() > 6 && nowtime.hour() < 23 && buzzSmp ) 
       {

@@ -30,7 +30,6 @@ void adjTimeAlarm(){
 }
 
 void lcdDisplayAll(){
-     // DateTime nowtime = rtc.now();
       u8g2.clearBuffer();
       u8g2.setFontMode(1);
       u8g2.setFont(u8g2_font_6x10_tr);    
@@ -42,19 +41,14 @@ void lcdDisplayAll(){
       u8g2.print(nowtime.day(), DEC);
       u8g2.print(' ');
       u8g2.print(daysOfTheWeek[nowtime.dayOfTheWeek()]);
-//         int val = getbatteryval();
-//  Serial.print("BATTER_VAL:=");
-//  Serial.println(val);
-//  val = map(val, 430, 565, 0, 100);
-  if(batVal >0)
-     {
-        u8g2.print(' ');
-        u8g2.print(batVal);
-        u8g2.print("%");
-     }
-
-    Serial.print("BATTER_VAL(%):=");
-   Serial.println(batVal);
+        if(batVal >0)
+           {
+              u8g2.print(' ');
+              u8g2.print(batVal);
+              u8g2.print("%");
+           }
+//        Serial.print("BATTER_VAL(%):=");
+//        Serial.println(batVal);
       u8g2.setFont(u8g2_font_10x20_tr);
       u8g2.setCursor(0, 32);
       sprintf(dateString, "%02u:%02u:%02u", nowtime.hour(), nowtime.minute(), nowtime.second());
