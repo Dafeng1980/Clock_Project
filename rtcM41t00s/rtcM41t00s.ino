@@ -35,7 +35,7 @@ const uint8_t kButtonPin = 7;
 const uint8_t kExtPowerPin = 22;
 const uint8_t kLedPin = 13;
 const int kBatteryPin = A0;
-uint16_t nSysT = 0;
+volatile uint16_t nSysT = 0;
 uint16_t nProtT = 0;
 uint16_t st = 0;
 
@@ -48,7 +48,15 @@ static float tempVal = 0;
 
 
 void WakeUp() {
+  detachInterrupt(digitalPinToInterrupt(kButtonPin));
   pressedButton = true;
+  digitalWrite(kPowerSwitch, LOW);
+
+//    key = 0;
+//    //T2_init();
+  Serial.print(F("St After_WakeUp"));
+  Serial.println(nSysT);
+ // detachInterrupt(digitalPinToInterrupt(kButtonPin));
  // analogWrite(kLightPin, 65);
 }
 
@@ -95,16 +103,22 @@ void loop() {
   
   if (pressedButton) 
   {
+    
     while (!digitalRead(kButtonPin)) {};
-    detachInterrupt(digitalPinToInterrupt(kButtonPin));
+   // detachInterrupt(digitalPinToInterrupt(kButtonPin));
     digitalWrite(kPowerSwitch, LOW);
     pressedButton = false;
- //   sei();
-    analogWrite(kLightPin, 65);
+    //setLcdOn();
+    if(nSysT > 8000)
+    setLcdOn();
+    else setLcdOff();
+   analogWrite(kLightPin, 65);
    // u8g2.setPowerSave(0);
-   u8g2.sleepOff();
+  // u8g2.sleepOff();
     delay(10);
     key = 0;
+    T2_init();
+ //   sei();
 //    n = 0;
 //    st = 0;
   }
@@ -150,6 +164,7 @@ void loop() {
   default:
    key = 0;
    }
+   
     if(nowtime.minute() == 30 && nowtime.hour() > 6 && nowtime.hour() < 23 && buzzSmp )
         {
           halfsound();
@@ -187,20 +202,27 @@ void loop() {
       
       checkButton();
       detectIR();
- //     delay(3000);     
-    // u8g2.sleepOn();
-     // u8g2.setPowerSave(1);
-    if (st >=300)
+    if (st >=10)
     {
-      setBrightness();
+       Serial.print(F("St Frist--"));
+       Serial.println(st);
+       delay(100);
+      //setBrightness();
+      //cli();
+//      setLcdOff();
+//      delay(1000);
+//      Serial.print(F("St After--"));
+//      Serial.println(st);
+      
+     // sei();
       attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, LOW);
       digitalWrite(kLightPin, LOW);
       digitalWrite(kPowerSwitch, HIGH);
       st = 0;
-     delay(10);
-     powerdown();
-     detachInterrupt(digitalPinToInterrupt(kButtonPin));
-     delay(10);
+      delay(10);
+      powerdown();
+//      detachInterrupt(digitalPinToInterrupt(kButtonPin));
+      delay(10);
     }
    // DateTime future (now + TimeSpan(7,12,30,6)); 
     

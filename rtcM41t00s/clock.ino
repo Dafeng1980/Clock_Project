@@ -63,10 +63,8 @@ void lcdDisplayAll(){
       u8g2.setFontMode(1);
       u8g2.setFont(u8g2_font_inr30_mf);
       u8g2.setCursor(0, 32);
-      if(n=n^1) sprintf(dateString, "%02u:%02u", nowtime.hour(), nowtime.minute());     
+      if(st%2) sprintf(dateString, "%02u:%02u", nowtime.hour(), nowtime.minute());     
          else   sprintf(dateString, "%02u %02u", nowtime.hour(), nowtime.minute());
-//      Serial.print("n= ");
-//      Serial.println(n);
       u8g2.print(dateString);
       u8g2.sendBuffer();
  }
@@ -305,5 +303,28 @@ void setBrightness(){
     Wire.beginTransmission(0x3c);
     Wire.write(0x00);
     Wire.write(0x01);
+    Wire.endTransmission();
+}
+
+void setLcdOff()
+  {
+
+    Wire.beginTransmission(0x3c);
+    Wire.write(0x00);
+    Wire.write(0xAE);
+    Wire.endTransmission();
+  }
+
+void setLcdOn()
+   {
+    int i2cstatus;
+    while(i2cstatus>0)
+  {
+    Wire.beginTransmission(0x3c);
+    i2cstatus=Wire.endTransmission();
+  }
+    Wire.beginTransmission(0x3c);
+    Wire.write(0x00);
+    Wire.write(0xAF);
     Wire.endTransmission();
 }
