@@ -282,3 +282,28 @@ void Tmp112_init()
       Wire.endTransmission();
       delay(10); 
    }
+
+   void powerdown()
+{
+  ADCSRA &= ~(1 << ADEN);
+  set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+  cli();
+  sleep_enable();
+// sleep_bod_disable();
+  sei();
+  sleep_cpu();
+  sleep_disable();
+  sei();
+  ADCSRA |= (1 << ADEN);
+}
+
+void setBrightness(){
+    Wire.beginTransmission(0x3c);
+    Wire.write(0x00);
+    Wire.write(0x81);
+    Wire.endTransmission();
+    Wire.beginTransmission(0x3c);
+    Wire.write(0x00);
+    Wire.write(0x01);
+    Wire.endTransmission();
+}

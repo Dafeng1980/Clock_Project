@@ -12,7 +12,6 @@
 #define UI_BUFFER_SIZE 64
 #define SERIAL_TERMINATOR '\n'
 #define TMP112_ADDR  0x49
-#define PIN 20
 #define IRPIN 21
 #define SYSTMMAX 30000
 
@@ -31,12 +30,14 @@ char ui_buffer[UI_BUFFER_SIZE];
 uint16_t alarmtime1,alarmtime2;
 const uint8_t kBuzzerPin = 15;
 const uint8_t kPowerSwitch = 10;
+const int kLightPin = 3;
 const uint8_t kButtonPin = 7;
 const uint8_t kExtPowerPin = 22;
-const uint8_t kLedPin = 20;
+const uint8_t kLedPin = 13;
 const int kBatteryPin = A0;
 uint16_t nSysT = 0;
 uint16_t nProtT = 0;
+uint16_t st = 0;
 
 static uint8_t cBatSmp = 0;
 static uint8_t nhours = 0;
@@ -48,6 +49,7 @@ static float tempVal = 0;
 
 void WakeUp() {
   pressedButton = true;
+ // analogWrite(kLightPin, 65);
 }
 
 void setup() {
@@ -55,20 +57,23 @@ void setup() {
   pinMode(kExtPowerPin, INPUT);
   pinMode(kBuzzerPin, OUTPUT);
   pinMode(kPowerSwitch, OUTPUT);
+  pinMode(kLightPin, OUTPUT);
   pinMode(kLedPin, OUTPUT);
   digitalWrite(kPowerSwitch, HIGH);
   digitalWrite(kBuzzerPin, LOW);
   digitalWrite(kPowerSwitch, LOW);
+  digitalWrite(kLightPin, LOW);
   analogReference(INTERNAL2V56);
   Serial.begin(38400);
   rtc.begin();
   rtc.setCalibration(0xA6);
   u8g2.begin();
   u8g2.enableUTF8Print(); 
+  //u8g2.setContrast(0);
   T2_init();
   Tmp112_init();
-  attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, FALLING);
-//rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); 
+//  attachInterrupt(EXTERNAL_INT_7, WakeUp, LOW);
+//  rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); 
   adjTimeAlarm();
   EEPROM.get(0x00, alarmtime1);
   key = 0;
@@ -80,12 +85,29 @@ void setup() {
   irrecv.enableIRIn();
   rtc.printAllBits(); 
   delay(50); 
+ // analogWrite(kLightPin, 35);
 }
 
 void loop() {  
   uint16_t  nTimeTmp = 0;
   unsigned int uctmp = 0;
   nowtime = rtc.now();
+  
+  if (pressedButton) 
+  {
+    while (!digitalRead(kButtonPin)) {};
+    detachInterrupt(digitalPinToInterrupt(kButtonPin));
+    digitalWrite(kPowerSwitch, LOW);
+    pressedButton = false;
+ //   sei();
+    analogWrite(kLightPin, 65);
+   // u8g2.setPowerSave(0);
+   u8g2.sleepOff();
+    delay(10);
+    key = 0;
+//    n = 0;
+//    st = 0;
+  }
    
   if(batSmp)
     {
@@ -165,8 +187,23 @@ void loop() {
       
       checkButton();
       detectIR();
+ //     delay(3000);     
+    // u8g2.sleepOn();
+     // u8g2.setPowerSave(1);
+    if (st >=300)
+    {
+      setBrightness();
+      attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, LOW);
+      digitalWrite(kLightPin, LOW);
+      digitalWrite(kPowerSwitch, HIGH);
+      st = 0;
+     delay(10);
+     powerdown();
+     detachInterrupt(digitalPinToInterrupt(kButtonPin));
+     delay(10);
+    }
    // DateTime future (now + TimeSpan(7,12,30,6)); 
-   //  delay(100);
+    
 }
 
 void checkButton(){
@@ -212,6 +249,10 @@ void checkButton(){
   sei(); 
 }
 
+//ISR(INT7_vect)
+//{
+//  
+//}
 ISR(TIMER2_OVF_vect)
 {
       nSysT++;
@@ -219,7 +260,10 @@ ISR(TIMER2_OVF_vect)
     {
       nSysT = 0;
     }
-
+    if(!(nSysT % 500))
+    {
+      st++;
+    }
 }
 
 void detectIR(){

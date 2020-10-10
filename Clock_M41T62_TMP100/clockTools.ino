@@ -13,14 +13,14 @@ void InitTmp100Hdc1080() {
 }
 
 void DisplayTime() {
-  DateTime now = rtc.now();
-  if(now.minute() == 00 && now.hour() > 6 && now.hour() < 23 && now.second()<2 ) sound();
-  if(now.minute() == 30 && now.hour() > 6 && now.hour() < 23 && now.second()<1 ) 
+  //DateTime now = rtc.now();
+  if(nowtime.minute() == 00 && nowtime.hour() > 6 && nowtime.hour() < 23 && nowtime.second()<2 ) sound();
+  if(nowtime.minute() == 30 && nowtime.hour() > 6 && nowtime.hour() < 23 && nowtime.second()<1 ) 
     {
       sound();
       delay(600);     
     }
-  sprintf(dateString, "%02u %02u %02u", now.hour(), now.minute(), now.second());
+  sprintf(dateString, "%02u %02u %02u", nowtime.hour(), nowtime.minute(), nowtime.second());
   display.set(dateString);
   display.setDot(0, true);
   display.setDot(1, true);
@@ -44,35 +44,35 @@ void DisplayTime() {
 }
 void DisplayTimeA() {
   uint8_t dow;
-  DateTime now = rtc.now();
-  if(now.minute() == 00 && now.hour() > 6 && now.hour() < 23 && now.second()<2 ) sound();
-  if(now.minute() == 30 && now.hour() > 6 && now.hour() < 23 && now.second()<1 ) 
+  //DateTime now = rtc.now();
+  if(nowtime.minute() == 00 && nowtime.hour() > 6 && nowtime.hour() < 23 && nowtime.second()<2 ) sound();
+  if(nowtime.minute() == 30 && nowtime.hour() > 6 && nowtime.hour() < 23 && nowtime.second()<1 ) 
     {
       sound();
       delay(600);     
     }
-  sprintf(dateString, "%02u=%02u d%1u", now.hour(), now.minute(), now.dayOfTheWeek());
+  sprintf(dateString, "%02u=%02u d%1u", nowtime.hour(), nowtime.minute(), nowtime.dayOfTheWeek());
   display.set(dateString);
   display.show(500);
-  sprintf(dateString, "%02u %02u d%1u", now.hour(), now.minute(), now.dayOfTheWeek());
+  sprintf(dateString, "%02u %02u d%1u", nowtime.hour(), nowtime.minute(), nowtime.dayOfTheWeek());
   display.set(dateString);
   display.show(500);
 }
 void DisplayDate() {
-  DateTime now = rtc.now();
+ // DateTime now = rtc.now();
   int batteryval = map(getbatteryval(), 750, 980, 0, 100);
   if (batteryval > 85)
-    sprintf(dateString, "++ %02u-%02u ", now.month(), now.day());
+    sprintf(dateString, "++ %02u-%02u ", nowtime.month(), nowtime.day());
   else if (batteryval <= 85 && batteryval >70)
-    sprintf(dateString, "=+ %02u-%02u ", now.month(), now.day());
+    sprintf(dateString, "=+ %02u-%02u ", nowtime.month(), nowtime.day());
   else if (batteryval <= 70 && batteryval >55)
-    sprintf(dateString, "_+ %02u-%02u ", now.month(), now.day());
+    sprintf(dateString, "_+ %02u-%02u ", nowtime.month(), nowtime.day());
   else if (batteryval <= 55 && batteryval >40)
-    sprintf(dateString, " + %02u-%02u ", now.month(), now.day());
+    sprintf(dateString, " + %02u-%02u ", nowtime.month(), nowtime.day());
   else if (batteryval <= 40 && batteryval > 20)
-    sprintf(dateString, " = %02u-%02u ", now.month(), now.day());
+    sprintf(dateString, " = %02u-%02u ", nowtime.month(), nowtime.day());
   else if (batteryval <= 20)
-    sprintf(dateString, " _ %02u-%02u ", now.month(), now.day());
+    sprintf(dateString, " _ %02u-%02u ", nowtime.month(), nowtime.day());
    
   display.set(dateString);
   display.show(2000);
@@ -217,10 +217,10 @@ void SetAlarmTime(){
   uint8_t x;
   uint8_t sec, min, hour, day, month, mode;
   uint16_t year;
-  DateTime now = rtc.now();
-  year = now.year();
-  month = now.month();
-  day = now.day();
+  nowtime = rtc.now();
+  year = nowtime.year();
+  month = nowtime.month();
+  day = nowtime.day();
   sec = 0;
   Serial.println(F("Enter Alarm1 Time format"));
   Serial.println(F("HH:MM  *Sample: 12:34 mode 1/per sec; 2/P min; 3/P hou; 4/P D 5/P M 6/P Y"));
@@ -255,9 +255,9 @@ void SetTime()
   Serial.println(x, DEC);
   Serial.print(F("Date: "));
   if (x == 0){
-    DateTime now = rtc.now();
+    nowtime = rtc.now();
     char buf1[] = "MMM DD YYYY";
-    now.toString(buf1);
+    nowtime.toString(buf1);
     for (int i = 0; i < 12; i++) {
     date[i] = buf1[i];
     }
@@ -323,11 +323,11 @@ void SetTime()
 
 void PrintTime()
      {
-          DateTime time = rtc.now();
+           nowtime = rtc.now();
 
             sprintf(dateString, "%4u-%02u-%02u %02u:%02u:%02u .",
-           time.year(), time.month(), time.day(), time.hour(),
-           time.minute(), time.second());
+           nowtime.year(), nowtime.month(), nowtime.day(), nowtime.hour(),
+           nowtime.minute(), nowtime.second());
            Serial.println(dateString);
       }
 
@@ -383,8 +383,8 @@ double gethumidity() {
 }
 
 void sound(){
-         tone(kSpeakerPin, 3530);
-          delay(50);
+         tone(kSpeakerPin, 2130);
+          delay(20);
            noTone(kSpeakerPin);
     }
 void PlayMusic() {

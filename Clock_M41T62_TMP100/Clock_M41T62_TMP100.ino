@@ -11,7 +11,7 @@
 #include "M41T62CLOCK.h"
 #include <ShiftDisplay.h>
 #include <IRremote.h>
-
+#include <EEPROM.h>
 
 #define SIXTEENTHNOTE 1
 #define EIGHTHNOTE 2
@@ -35,6 +35,7 @@ RTC_M41T62 rtc;
 ShiftDisplay display(14, 15, 13, COMMON_ANODE, 8);
 IRrecv irrecv(IRPIN);
 decode_results results;
+DateTime nowtime;
 
 volatile bool pressedButton, alarmstatus,lightstatus;
 volatile int key;
@@ -52,11 +53,14 @@ const int kLightPin = 4;
 const int kSpeakerPin = 12;
 const int kBatteryPin = A7;
 
+const uint8_t Dimmers[16] = { 0, 13, 23, 33, 45, 60, 80, 100, 120, 138, 158, 178, 198, 218, 238, 255};
 char ui_buffer[UI_BUFFER_SIZE];
 char dateString[35];
 char tempString[5];
 int n, st;
-uint8_t lightvalue;
+//uint8_t lightvalue;
+uint8_t	dim_data = 0;
+uint8_t irkey = 0;
 
 void WakeUp() {
   pressedButton = true;
@@ -72,7 +76,7 @@ void setup()
   digitalWrite(kLedPin, LOW);
   digitalWrite(kLightPin, LOW);
   lightstatus = false;
-  lightvalue = 127;
+ // lightvalue = 127;
   // attachInterrupt(digitalPinToInterrupt(kButtonPin), buttonPressInterrupt, FALLING);
   analogReference(INTERNAL1V1);
   pressedButton = false;
@@ -123,7 +127,7 @@ void setup()
   rtc.printAllBits();
   DisplayAll();
   if (alarmstatus)
-    DisplayOn();
+      DisplayOn();
   else
   {
     DisplayOff();
@@ -135,19 +139,21 @@ void setup()
   Serial.print(F("kExtPowerPin:="));
   Serial.println(extp);
   irrecv.enableIRIn();
+  EEPROM.get(0x00, dim_data);
 }
+
 
 void loop()
 {
-  if (pressedButton) {
+
+  nowtime = rtc.now();
+  
+  if (pressedButton) 
+  {
     detachInterrupt(digitalPinToInterrupt(kButtonPin));
     pressedButton = false;
-    if (alarmstatus)
-      DisplayOn();
-    else
-    {
-      DisplayOff();
-    }
+      if (alarmstatus)  DisplayOn();
+      else  DisplayOff();   
     DisplayAll();
     key = 0;
     n = 0;
@@ -176,21 +182,16 @@ switch (key)
     break;
   case 4:
     DisplayAll();
-    if (alarmstatus)
-      DisplayOn();
-    else
-    {
-      DisplayOff();
-    }
-    if (st > 0) {
-      key = 0;
-    }
+    if (alarmstatus) DisplayOn();
+    else DisplayOff();
+    
+    if (st > 0) key = 0;    
     st++;
     break;
 
   case 5:
     DispalyShutdown();
-    attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, FALLING);
+    attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, HIGH);
     digitalWrite(kLightPin, LOW);
     lightstatus = false;
     delay(10);
@@ -198,7 +199,8 @@ switch (key)
     detachInterrupt(digitalPinToInterrupt(kButtonPin));
   default:
     key = 0;
-    if (alarmstatus) {
+    if (alarmstatus) 
+    {
       alarmstatus = false;
     }
     else
@@ -208,7 +210,7 @@ switch (key)
     break;
   }
   
-if (n == 290)
+if (n >= 290)
    {
     DispalyShutdown();
     attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, FALLING);
@@ -221,65 +223,71 @@ if (n == 290)
    
   n++;
   detectIR();
+  lightAdjust();
   checkButton();
   //Serial.print("n:=");
   //Serial.println(n);
   //Serial.print("key:=");
   //Serial.println(key);
-  //Serial.print("alarmstatus:=");
-  //Serial.println(alarmstatus);
-  //Serial.print("weekend:=");
-  //Serial.println(weekend);
 }
 
 
-void detectIR(){
+void detectIR()
+{
   if (irrecv.decode(&results)) {
    // Serial.println(results.value, HEX);
 
        switch (results.value) {
          case 0xA32AB931:
          case 0x2F502FD:
+              irkey = 0;
               sound();
               if (lightstatus)
                   {
                    digitalWrite(kLightPin, LOW);
                    lightstatus = false;
-                  } else            
-                        {
-                         analogWrite(kLightPin, lightvalue);
-                         lightstatus = true;
-                        }                       
+                  } 
+              else            
+                  {
+                    if (dim_data !=16)
+                          analogWrite(kLightPin, Dimmers[dim_data]);
+                    else 
+                          analogWrite(kLightPin, 255);
+                   lightstatus = true;
+                   }                       
             break;
 
          case 0x39D41DC6:
          case 0x2F522DD:
-			if(lightstatus){
-          sound();
-          for (int i = 0; i < 16 ; i++){
-          if(lightvalue == 255)
-          lightvalue = 255;
-          else 
-          lightvalue++;
-          delay(10);
-          analogWrite(kLightPin, lightvalue);
-             }
-         }           
+              sound();
+              irkey = 1;
+			// if(lightstatus){
+      //     sound();
+      //     for (int i = 0; i < 16 ; i++){
+      //     if(lightvalue == 255)
+      //     lightvalue = 255;
+      //     else 
+      //     lightvalue++;
+      //     delay(10);
+      //     analogWrite(kLightPin, lightvalue);
+      //        }
+      //    }           
            break;
                      
          case 0xE0984BB6:
          case 0x2F518E7:
           sound();
-			if(lightstatus){
-          for (int i = 0; i < 16 ; i++){
-            if (lightvalue == 0)
-            lightvalue = 0;
-            else
-            lightvalue--;
-            delay(10);
-          analogWrite(kLightPin, lightvalue);
-             }
-         }                  
+          irkey = 2;
+			// if(lightstatus){
+      //     for (int i = 0; i < 16 ; i++){
+      //       if (lightvalue == 0)
+      //       lightvalue = 0;
+      //       else
+      //       lightvalue--;
+      //       delay(10);
+      //     analogWrite(kLightPin, lightvalue);
+      //        }
+      //    }                  
             break;
             
          case 0x4EA240AE:
@@ -317,45 +325,61 @@ void detectIR(){
          }
    irrecv.resume();
    }
-  
 }
-void checkButton() {
-  if (digitalRead(kButtonPin) == 0) {
-    delay(5);
-    if (digitalRead(kButtonPin) == 0);
+
+void lightAdjust()
+   {
+      if (lightstatus)
+         {
+            if (irkey != 0 && irkey < 3)
+              {
+                 if (irkey == 2)
+                  {
+                    if (dim_data > 0) dim_data--;
+                   }
+                 else if (irkey == 1)
+                    {
+                    if (dim_data < 16)  dim_data++;
+                    }
+                analogWrite(kLightPin, Dimmers[dim_data]);
+                EEPROM.put(0x00, dim_data);
+                delay(100);
+                irkey = 0;
+              }
+          }
+    }
+
+void checkButton() 
+{
+  if (digitalRead(kButtonPin) == 0) 
     {
-      if (rtc.checkFlags() && alarmstatus) {
-        byte week;
-        DateTime now = rtc.now();
-        week = now.dayOfTheWeek();
-        //Serial.print("week:=");
-        //Serial.println(week);
-        if (week != 0 && week != 6)
-          PlayMusic();
-          key = 0;
-      }
-      else
-        key++;
-      n = 0;
-    }
-    sound();
+      delay(5);
+    if (digitalRead(kButtonPin) == 0);
+      {
+        if (rtc.checkFlags() && alarmstatus) 
+          {
+            byte week;
+            week = nowtime.dayOfTheWeek();
+            if (week != 0 && week != 6) PlayMusic();
+            key = 0;
+           }
+        else  key++;
+        n = 0;
+        sound();
+      }   
   }
-  if (digitalRead(kExtPowerPin) && n > 50) {
-    n = 0;
-  }
-  if (getbatteryval() <= 768) {
-    digitalWrite(kLedPin, HIGH);
-    if (!((n + 1) % 60)) {
-      DispalyShutdown();
-      attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, FALLING);
-      delay(10);
-      powerdown(SLEEP_FOREVER);
-      detachInterrupt(digitalPinToInterrupt(kButtonPin));
-
-    }
-
-  }
-  if (getbatteryval() > 780) {
-    digitalWrite(kLedPin, LOW);
-  }
+    if (digitalRead(kExtPowerPin) && n >= 50) n = 0;
+    if (getbatteryval() <= 768) 
+      {
+        digitalWrite(kLedPin, HIGH);
+        if (!((n + 1) % 60)) 
+          {
+             DispalyShutdown();
+             attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, FALLING);
+             delay(10);
+             powerdown(SLEEP_FOREVER);
+             detachInterrupt(digitalPinToInterrupt(kButtonPin));
+           }
+        }
+    if (getbatteryval() >= 780) digitalWrite(kLedPin, LOW);
 }
