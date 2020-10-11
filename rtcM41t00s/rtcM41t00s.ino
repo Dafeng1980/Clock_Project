@@ -201,6 +201,7 @@ void checkButton(){
 //  if (getbatteryval() > 780) {
 //    digitalWrite(kLedPin, LOW);
 //  }
+    delay(200);
  }
 
  void T2_init(){
