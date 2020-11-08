@@ -24,7 +24,7 @@ DateTime nowtime;
 
 volatile bool pressedButton, n, ledstatus, batSmp, tempSmp, buzzSmp, timeSmp;
 volatile uint8_t key;
-char daysOfTheWeek[7][10] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thurday", "Friday", "Saturday"};
+char daysOfTheWeek[7][10] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
 char dateString[35];
 char ui_buffer[UI_BUFFER_SIZE];
 uint16_t alarmtime1,alarmtime2;
@@ -38,26 +38,21 @@ const int kBatteryPin = A0;
 volatile uint16_t nSysT = 0;
 uint16_t nProtT = 0;
 uint16_t st = 0;
+uint16_t nShutT = 0;
 
 static uint8_t cBatSmp = 0;
 static uint8_t nhours = 0;
 static int nBatsum = 0;
 static int batVal = 0;
 static float tempVal = 0;
-
+//static uint16_t  nTimeTmp = 0;
 
 
 void WakeUp() {
-  detachInterrupt(digitalPinToInterrupt(kButtonPin));
   pressedButton = true;
   digitalWrite(kPowerSwitch, LOW);
-
-//    key = 0;
-//    //T2_init();
-  Serial.print(F("St After_WakeUp"));
-  Serial.println(nSysT);
- // detachInterrupt(digitalPinToInterrupt(kButtonPin));
- // analogWrite(kLightPin, 65);
+  while (!digitalRead(kButtonPin)) {};
+  detachInterrupt(digitalPinToInterrupt(kButtonPin));
 }
 
 void setup() {
@@ -91,7 +86,8 @@ void setup() {
   buzzSmp = true;
   timeSmp = true;
   irrecv.enableIRIn();
-  rtc.printAllBits(); 
+  rtc.printAllBits();
+  setBrightness(); 
   delay(50); 
  // analogWrite(kLightPin, 35);
 }
@@ -103,24 +99,12 @@ void loop() {
   
   if (pressedButton) 
   {
-    
-    while (!digitalRead(kButtonPin)) {};
+   // while (!digitalRead(kButtonPin)) {};
    // detachInterrupt(digitalPinToInterrupt(kButtonPin));
-    digitalWrite(kPowerSwitch, LOW);
+   // digitalWrite(kPowerSwitch, LOW);
     pressedButton = false;
-    //setLcdOn();
-    if(nSysT > 8000)
-    setLcdOn();
-    else setLcdOff();
-   analogWrite(kLightPin, 65);
-   // u8g2.setPowerSave(0);
-  // u8g2.sleepOff();
     delay(10);
     key = 0;
-    T2_init();
- //   sei();
-//    n = 0;
-//    st = 0;
   }
    
   if(batSmp)
@@ -149,20 +133,33 @@ void loop() {
      
    switch (key){
     case 0:
-    lcdDisplayAll();
+      lcdDisplayAll();
     break;
-  case 1:
-    lcdDisplayA();
-    //ledon();
+    case 1:
+      lcdDisplayA();
     break;
-  case 2:
-    lcdDisplayAll();
-    key = 0;
+    case 2:
+      key = 0;
     break;
-  case 3:
+    case 9:
+      setLcdOff();
+      digitalWrite(kLightPin, LOW);
+      digitalWrite(kPowerSwitch, HIGH);
+      while (!digitalRead(kButtonPin)) {};
+      key = 0;
+      st = 0;
+      Serial.println(F("Sleep --"));
+      delay(200);
+      attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, LOW);
+      powerdown();
+      T2_init();
+      sound();
+      Serial.println(F("WakeUp--"));
+      setLcdOn();
     break;
-  default:
-   key = 0;
+    
+    default:
+      key = 0;
    }
    
     if(nowtime.minute() == 30 && nowtime.hour() > 6 && nowtime.hour() < 23 && buzzSmp )
@@ -201,66 +198,47 @@ void loop() {
       }
       
       checkButton();
+
       detectIR();
-    if (st >=10)
+
+    if (st >= 300 && nowtime.hour() >= 0 && nowtime.hour() < 8 )
+   // if (st >= 15)
     {
-       Serial.print(F("St Frist--"));
-       Serial.println(st);
-       delay(100);
-      //setBrightness();
-      //cli();
-//      setLcdOff();
-//      delay(1000);
-//      Serial.print(F("St After--"));
-//      Serial.println(st);
-      
-     // sei();
-      attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, LOW);
-      digitalWrite(kLightPin, LOW);
-      digitalWrite(kPowerSwitch, HIGH);
-      st = 0;
-      delay(10);
-      powerdown();
-//      detachInterrupt(digitalPinToInterrupt(kButtonPin));
-      delay(10);
+      key = 9;
     }
-   // DateTime future (now + TimeSpan(7,12,30,6)); 
-    
+   // DateTime future (now + TimeSpan(7,12,30,6));     
 }
 
 void checkButton(){
+  if (nowtime.minute() != 0 && nowtime.minute() != 30 && buzzSmp == 0) buzzSmp = true;
   if (digitalRead(kButtonPin) == 0) 
     {
-
-      delay(5);
+      delay(10);
       if (digitalRead(kButtonPin) == 0);
         {           
           key++;
           sound();
         }
-    }
-
-  if (nowtime.minute() != 0 && nowtime.minute() != 30 && buzzSmp == 0) buzzSmp = true;
-      
-//  if (digitalRead(kExtPowerPin) && n > 50) {
-//    n = 0;
-//  }
-//  if (getbatteryval() <= 768) {
-//    digitalWrite(kLedPin, HIGH);
-//    if (!((n + 1) % 60)) {
-//      DispalyShutdown();
-//      attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, FALLING);
-//      delay(10);
-//      powerdown(SLEEP_FOREVER);
-//      detachInterrupt(digitalPinToInterrupt(kButtonPin));
-//
-//    }
-//
-//  }
-//  if (getbatteryval() > 780) {
-//    digitalWrite(kLedPin, LOW);
-//  }
-    delay(200);
+     }
+         cli();
+         nShutT = nSysT;
+         sei(); 
+         while (!digitalRead(kButtonPin)) {
+              uint16_t  nTmp = 0;
+              cli();
+              nTmp = SYSTMMAX + nSysT - nShutT;
+              sei();
+                if(nTmp >= SYSTMMAX)
+                {
+                  nTmp = nTmp - SYSTMMAX;
+                }
+                 if (nTmp >= 1600) {
+                  key = 9;
+                  break;
+                 }
+                };
+          if (key > 9) key = 0;
+          delay(10);
  }
 
  void T2_init(){
@@ -272,10 +250,7 @@ void checkButton(){
   sei(); 
 }
 
-//ISR(INT7_vect)
-//{
-//  
-//}
+
 ISR(TIMER2_OVF_vect)
 {
       nSysT++;
@@ -286,6 +261,7 @@ ISR(TIMER2_OVF_vect)
     if(!(nSysT % 500))
     {
       st++;
+      if (st >= SYSTMMAX) st = 0;
     }
 }
 

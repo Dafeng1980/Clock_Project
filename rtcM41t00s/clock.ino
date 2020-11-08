@@ -290,7 +290,8 @@ void Tmp112_init()
 // sleep_bod_disable();
   sei();
   sleep_cpu();
-  sleep_disable();
+  sleep_disable(); 
+  Serial.println(F("Sleep_disable"));
   sei();
   ADCSRA |= (1 << ADEN);
 }
@@ -308,16 +309,22 @@ void setBrightness(){
 
 void setLcdOff()
   {
-
+  
     Wire.beginTransmission(0x3c);
     Wire.write(0x00);
     Wire.write(0xAE);
     Wire.endTransmission();
+    delay(10);
+    Wire.beginTransmission(0x3c);
+    Wire.endTransmission();
+
   }
 
 void setLcdOn()
    {
     int i2cstatus;
+    Wire.beginTransmission(0x3c);
+    i2cstatus=Wire.endTransmission();
     while(i2cstatus>0)
   {
     Wire.beginTransmission(0x3c);
