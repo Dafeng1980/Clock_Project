@@ -291,7 +291,7 @@ void Tmp112_init()
   sei();
   sleep_cpu();
   sleep_disable(); 
-  Serial.println(F("Sleep_disable"));
+ // Serial.println(F("Sleep_disable"));
   sei();
   ADCSRA |= (1 << ADEN);
 }
@@ -334,4 +334,177 @@ void setLcdOn()
     Wire.write(0x00);
     Wire.write(0xAF);
     Wire.endTransmission();
+}
+
+void enterPowerDown(){
+      setLcdOff();     
+      digitalWrite(kLightPin, LOW);      //trun off LED light
+      digitalWrite(kPowerSwitch, HIGH);   // Power Switch off
+      while (!digitalRead(kButtonPin)) {};
+      key = 0;
+      st = 0;
+      Serial.println(F("Sleep --"));
+      delay(200);
+      attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, LOW);
+      powerdown();
+      T2_init();
+      sound();
+      Serial.println(F("WakeUp--"));
+      setLcdOn();
+}
+
+void checkButton(){
+  // if (nowtime.minute() != 0 && nowtime.minute() != 30 && buzzSmp == 0) buzzSmp = true;
+  if ((st >= 300 && nowtime.hour() >= 0 && nowtime.hour() < 8 ) && !chargerstatus)
+   // if (st >= 15)
+    {
+      key = 9;
+    }
+  if (digitalRead(kButtonPin) == 0 && buttonstatus) 
+    {
+      delay(10);
+      if (digitalRead(kButtonPin) == 0);
+        {           
+          key++;
+          sound();
+          buttonstatus = false;
+        }
+     }
+         cli();
+         nShutT = nSysT;
+         sei(); 
+         while (!digitalRead(kButtonPin)) {
+              uint16_t  nTmp = 0;
+              cli();
+              nTmp = SYSTMMAX + nSysT - nShutT;
+              sei();
+                if(nTmp >= SYSTMMAX)
+                {
+                  nTmp = nTmp - SYSTMMAX;
+                }
+                 if (nTmp >= 1600) {
+                  key = 9;
+                  break;
+                 }
+                };
+          if (key > 9) key = 0;
+          delay(10);
+ }
+
+void hoursbuzz(){
+  uint16_t  nTimeTmp = 0;    
+  if(nowtime.minute() == 30 && nowtime.hour() > 6 && nowtime.hour() < 23 && buzzSmp )
+        {
+          halfsound();
+          buzzSmp = false;
+        }
+  if(nowtime.minute() > 30 && buzzSmp) buzzSmp = false;  
+  if(nowtime.minute() == 0 && nowtime.hour() > 6 && nowtime.hour() < 23 && !buzzSmp ) 
+      {
+        if (timeSmp)
+          {
+            nhours = nowtime.twelveHour();  //get the number of hours
+            timeSmp = false;
+          }
+          cli();
+          nTimeTmp = SYSTMMAX + nSysT - nProtT;
+          sei();
+          if(nTimeTmp >= SYSTMMAX)
+          {
+            nTimeTmp = nTimeTmp - SYSTMMAX;
+          }
+          if (nTimeTmp >= 650)   // per 2ms * 650 =1.3s  sound 
+          {
+            sound();
+            nhours--;
+            if(nhours == 0)
+              {
+                  buzzSmp = true;
+                  timeSmp = true;
+              }
+             cli();
+             nProtT = nSysT;
+             sei(); 
+          } 
+      } 
+}
+
+
+void detectIR(){
+  if (irrecv.decode(&results)) {
+    Serial.println(results.value, HEX);
+
+       switch (results.value) {
+         case 0xA32AB931:
+         case 0x2F502FD:
+              sound();
+//              if (lightstatus)
+//                  {
+//                   digitalWrite(kLightPin, LOW);
+//                   lightstatus = false;
+//                  } else            
+//                        {
+//                         analogWrite(kLightPin, lightvalue);
+//                         lightstatus = true;
+//                        }                       
+            break;
+
+         case 0x39D41DC6:
+         case 0x2F522DD:
+ //     if(lightstatus){
+          sound();
+//          for (int i = 0; i < 16 ; i++){
+//          if(lightvalue == 255)
+//          lightvalue = 255;
+//          else 
+//          lightvalue++;
+//          delay(10);
+//          analogWrite(kLightPin, lightvalue);
+//             }
+//         }           
+           break;
+                     
+         case 0xE0984BB6:
+         case 0x2F518E7:
+          sound();
+//      if(lightstatus){
+//          for (int i = 0; i < 16 ; i++){
+//            if (lightvalue == 0)
+//            lightvalue = 0;
+//            else
+//            lightvalue--;
+//            delay(10);
+//          analogWrite(kLightPin, lightvalue);
+//             }
+//         }                  
+            break;
+            
+         case 0x4EA240AE:
+            delay(50);
+            sound();
+//            key++;
+//           if(key > 3)
+//            key = 0;
+//           n = 0;           
+            break;
+
+         case 0x4E87E0AB:
+              delay(50);
+              sound();
+            break;
+
+         case 0x371A3C86:
+            delay(50);
+            sound();
+            //DisplayTempHum();
+            break;
+             
+         case 0x143226DB:
+            delay(50);
+            sound();
+           // DisplayAll();
+            break;
+         }
+   irrecv.resume();
+   }  
 }
