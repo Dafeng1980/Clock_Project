@@ -24,10 +24,12 @@ IRrecv irrecv(IRPIN);
 decode_results results;
 DateTime nowtime;
 
-volatile bool pressedButton, n, ledstatus, batSmp, tempSmp, buzzSmp, timeSmp, nowtimeSmp;
+volatile bool pressedButton, n, ledstatus, batSmp, tempSmp,nowtimeSmp;
+static bool buzzstatus = true;
 static bool lightstatus = false;
 static bool chargerstatus = false;
 static bool buttonstatus = true; 
+static bool hoursalarm = false;
 volatile uint8_t key;
 char daysOfTheWeek[7][10] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
 char dateString[35];
@@ -42,8 +44,9 @@ const uint8_t kLedPin = 13;
 const int kBatteryPin = A0;
 volatile uint16_t nSysT = 0;
 uint16_t nProtT = 0;
-uint16_t st = 0;
 uint16_t nShutT = 0;
+uint16_t nShowT = 0;
+uint16_t st = 0;
 
 static uint8_t cBatSmp = 0;
 static uint8_t nhours = 0;
@@ -61,16 +64,7 @@ void WakeUp() {
 }
 
 void setup() {
-  pinMode(kButtonPin, INPUT_PULLUP);
-  pinMode(kExtPowerPin, INPUT);        //Power input and charger at HIGH
-  pinMode(kBuzzerPin, OUTPUT);
-  pinMode(kPowerSwitch, OUTPUT);
-  pinMode(kLightPin, OUTPUT);
-  pinMode(kLedPin, OUTPUT);
-  digitalWrite(kPowerSwitch, HIGH);
-  digitalWrite(kBuzzerPin, LOW);
-  digitalWrite(kPowerSwitch, LOW);
-  digitalWrite(kLightPin, LOW);
+  ioInit();
   analogReference(INTERNAL2V56);
   Serial.begin(38400);
   rtc.begin();
@@ -89,8 +83,6 @@ void setup() {
   batSmp = true;
   tempSmp = false;
   nowtimeSmp = false;
-  buzzSmp = true;
-  timeSmp = true;
   irrecv.enableIRIn();
   rtc.printAllBits();
   setBrightness(); 
@@ -100,6 +92,7 @@ void setup() {
 
 void loop() {  
   unsigned int uctmp = 0;
+  uint16_t  nTime = 0;
  // nowtime = rtc.now();  
   if (pressedButton) 
   {
@@ -140,46 +133,55 @@ void loop() {
       {
         nowtime = rtc.now();
         if(digitalRead(kExtPowerPin)) chargerstatus = true;
+        else chargerstatus = false;
         nowtimeSmp = 0;
         tempSmp = 0;
         batSmp = 1;
       }
-
-   switch (key){
-    case 0:
-      lcdDisplayAll();
-      buttonstatus = true;
-    break;
-    case 1:
-      lcdDisplayA();
-      buttonstatus = true;
-    break;
-    case 2:
-      key = 0;
-      buttonstatus = true;
-    break;
-    case 9:
-      enterPowerDown();
-      buttonstatus = true;
-    break;    
-    default:
-      key = 0;
-      buttonstatus = true;
-   }      
+   
+   if (0 == (nSysT+1)%100){
+    
+    if (key == 0) lcdDisplayAll();
+    else if (key == 1) lcdDisplayA();
+    else if (key == 9) enterPowerDown();
+    else key = 0;
+    buttonstatus = true;
+   }
+//   switch (key){
+//    case 0:
+//      lcdDisplayAll();
+//      buttonstatus = true;
+//    break;
+//    case 1:
+//      lcdDisplayA();
+//      buttonstatus = true;
+//    break;
+//    case 2:
+//      key = 0;
+//      buttonstatus = true;
+//    break;
+//    case 9:
+//      enterPowerDown();
+//      buttonstatus = true;
+//    break;    
+//    default:
+//      key = 0;
+//      buttonstatus = true;
+//   }
+      hoursbuzz();      
       checkButton();
       detectIR(); 
    // DateTime future (now + TimeSpan(7,12,30,6));     
 }
 
  void T2_init(){
-   cli();
+  cli();
   OCR2 = 0x00;
   TCNT2 =0x00;
   TCCR2 = 0x03;     //0x03 clkI/O/64 per 2ms! 0x04 clkI/O/256  per 8ms!
   TIMSK |= (1 << TOIE2);
   sei(); 
 }
-
 
 ISR(TIMER2_OVF_vect)
 {
@@ -188,7 +190,7 @@ ISR(TIMER2_OVF_vect)
     {
       nSysT = 0;
     }
-    if(!(nSysT % 500))
+    if(!(nSysT % 500)) // after 1sec st + 1 
     {
       st++;
       if (st >= SYSTMMAX) st = 0;

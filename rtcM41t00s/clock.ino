@@ -354,12 +354,7 @@ void enterPowerDown(){
 }
 
 void checkButton(){
-  // if (nowtime.minute() != 0 && nowtime.minute() != 30 && buzzSmp == 0) buzzSmp = true;
-  if ((st >= 300 && nowtime.hour() >= 0 && nowtime.hour() < 8 ) && !chargerstatus)
-   // if (st >= 15)
-    {
-      key = 9;
-    }
+  if ((st >= 300 && nowtime.hour() >= 0 && nowtime.hour() < 8 ) && !chargerstatus) key = 9;     
   if (digitalRead(kButtonPin) == 0 && buttonstatus) 
     {
       delay(10);
@@ -388,27 +383,31 @@ void checkButton(){
                  }
                 };
           if (key > 9) key = 0;
-          delay(10);
+          // delay(10);
  }
 
 void hoursbuzz(){
-  uint16_t  nTimeTmp = 0;    
-  if(nowtime.minute() == 30 && nowtime.hour() > 6 && nowtime.hour() < 23 && buzzSmp )
+    uint16_t  nTimeTmp = 0;
+    if(nowtime.minute() > 30 && buzzstatus) buzzstatus = false;    
+    if(nowtime.minute() == 30 && nowtime.hour() > 6 && nowtime.hour() < 23 && buzzstatus )
         {
-          halfsound();
-          buzzSmp = false;
+           halfsound();
+           buzzstatus = false;
+        }  
+    if(nowtime.minute() == 0 && nowtime.hour() > 6 && nowtime.hour() < 23 && !buzzstatus ) 
+        {
+           nhours = nowtime.twelveHour();  //get the number of hours
+           hoursalarm = true;
+           buzzstatus = true; 
         }
-  if(nowtime.minute() > 30 && buzzSmp) buzzSmp = false;  
-  if(nowtime.minute() == 0 && nowtime.hour() > 6 && nowtime.hour() < 23 && !buzzSmp ) 
-      {
-        if (timeSmp)
-          {
-            nhours = nowtime.twelveHour();  //get the number of hours
-            timeSmp = false;
-          }
-          cli();
-          nTimeTmp = SYSTMMAX + nSysT - nProtT;
-          sei();
+    if(hoursalarm) hours_alarm(); 
+}
+
+void hours_alarm(){
+     uint16_t  nTimeTmp = 0;
+        cli();
+        nTimeTmp = SYSTMMAX + nSysT - nProtT;
+        sei();
           if(nTimeTmp >= SYSTMMAX)
           {
             nTimeTmp = nTimeTmp - SYSTMMAX;
@@ -417,18 +416,12 @@ void hoursbuzz(){
           {
             sound();
             nhours--;
-            if(nhours == 0)
-              {
-                  buzzSmp = true;
-                  timeSmp = true;
-              }
-             cli();
-             nProtT = nSysT;
-             sei(); 
-          } 
-      } 
+            if(nhours == 0) hoursalarm = false;                              
+            cli();
+            nProtT = nSysT;
+            sei(); 
+          }  
 }
-
 
 void detectIR(){
   if (irrecv.decode(&results)) {
@@ -507,4 +500,17 @@ void detectIR(){
          }
    irrecv.resume();
    }  
+}
+
+void ioInit(){
+  pinMode(kButtonPin, INPUT_PULLUP);
+  pinMode(kExtPowerPin, INPUT);        //Power input and charger at HIGH
+  pinMode(kBuzzerPin, OUTPUT);
+  pinMode(kPowerSwitch, OUTPUT);
+  pinMode(kLightPin, OUTPUT);
+  pinMode(kLedPin, OUTPUT);
+  digitalWrite(kPowerSwitch, HIGH);
+  digitalWrite(kBuzzerPin, LOW);
+  digitalWrite(kPowerSwitch, LOW);
+  digitalWrite(kLightPin, LOW);
 }
