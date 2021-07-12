@@ -18,13 +18,12 @@
 #define SYSTMMAX 30000
 
 U8G2_SSD1306_128X32_UNIVISION_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
-
 RTC_M41T00S rtc;
 IRrecv irrecv(IRPIN);
 decode_results results;
 DateTime nowtime;
 
-volatile bool pressedButton, n, ledstatus, batSmp, tempSmp,nowtimeSmp;
+volatile bool pressedButton,n,ledstatus, batSmp,tempSmp,nowtimeSmp;
 static bool buzzstatus = true;
 static bool lightstatus = false;
 static bool chargerstatus = false;
@@ -138,15 +137,25 @@ void loop() {
         tempSmp = 0;
         batSmp = 1;
       }
-   
-   if (0 == (nSysT+1)%100){
-    
-    if (key == 0) lcdDisplayAll();
-    else if (key == 1) lcdDisplayA();
-    else if (key == 9) enterPowerDown();
-    else key = 0;
-    buttonstatus = true;
-   }
+         
+    cli();
+    nTime = SYSTMMAX + nSysT - nShowT;
+    sei();
+    if(nTime >= SYSTMMAX)
+       {
+         nTime = nTime - SYSTMMAX;
+       }
+          if (nTime >= 100){     
+            if (key == 0) lcdDisplayAll();
+            else if (key == 1) lcdDisplayA();
+            else if (key == 9) enterPowerDown();
+            else key = 0;
+
+            cli();
+            nShowT = nSysT;
+            sei();
+            buttonstatus = true;
+          }
 //   switch (key){
 //    case 0:
 //      lcdDisplayAll();

@@ -32,27 +32,20 @@ void adjTimeAlarm(){
 void lcdDisplayAll(){
       u8g2.clearBuffer();
       u8g2.setFontMode(1);
-      u8g2.setFont(u8g2_font_6x10_tr);    
-      u8g2.setCursor(0, 10);
-      u8g2.print(nowtime.year(), DEC);
-      u8g2.print('/');
-      u8g2.print(nowtime.month(), DEC);
-      u8g2.print('/');
-      u8g2.print(nowtime.day(), DEC);
-      u8g2.print(' ');
-      u8g2.print(daysOfTheWeek[nowtime.dayOfTheWeek()]);
-        if(batVal >0)
-           {
-              u8g2.print(' ');
-              u8g2.print(batVal);
-              u8g2.print("%");
-           }
+      u8g2.setFont(u8g2_font_6x12_tr);    
+      u8g2.setCursor(0, 12);
+      u8g2.printf("%02u/%02u/%02u %s ",nowtime.year(),nowtime.month(),nowtime.day(),daysOfTheWeek[nowtime.dayOfTheWeek()]);
+      if(batVal >0)
+        {
+          u8g2.print(batVal);
+          u8g2.print("%");
+        }
 //        Serial.print("BATTER_VAL(%):=");
 //        Serial.println(batVal);
       u8g2.setFont(u8g2_font_10x20_tr);
       u8g2.setCursor(0, 32);
-      sprintf(dateString, "%02u:%02u:%02u", nowtime.hour(), nowtime.minute(), nowtime.second());
-      u8g2.print(dateString);
+      u8g2.printf("%02u:%02u:%02u",nowtime.hour(),nowtime.minute(),nowtime.second());
+      u8g2.setFont(u8g2_font_8x13_tr);
       u8g2.print(" ");
       u8g2.print(tempVal, 1);      
       u8g2.sendBuffer();
@@ -61,10 +54,13 @@ void lcdDisplayAll(){
  void lcdDisplayA(){      
       u8g2.clearBuffer();
       u8g2.setFontMode(1);
-      u8g2.setFont(u8g2_font_inr30_mf);
+      u8g2.setFont(u8g2_font_6x12_tr);    
+      u8g2.setCursor(98, 12);
+      u8g2.printf("%s",daysOfTheWeek[nowtime.dayOfTheWeek()]);
+      u8g2.setFont(u8g_font_courB24n);
       u8g2.setCursor(0, 32);
       if(st%2) sprintf(dateString, "%02u:%02u", nowtime.hour(), nowtime.minute());     
-         else   sprintf(dateString, "%02u %02u", nowtime.hour(), nowtime.minute());
+         else  sprintf(dateString, "%02u %02u", nowtime.hour(), nowtime.minute());
       u8g2.print(dateString);
       u8g2.sendBuffer();
  }
@@ -90,14 +86,14 @@ float gettemp(){
 
 void sound(){
          tone(kBuzzerPin, 2900);
-          delay(35);
+          delay(30);
            noTone(kBuzzerPin);
            T2_init();
     }
 
 void halfsound(){
          tone(kBuzzerPin, 2800);
-          delay(100);
+          delay(85);
            noTone(kBuzzerPin);
            T2_init();
     }
