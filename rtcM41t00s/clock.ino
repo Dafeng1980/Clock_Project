@@ -510,3 +510,14 @@ void ioInit(){
   digitalWrite(kPowerSwitch, LOW);
   digitalWrite(kLightPin, LOW);
 }
+
+void beep(){       //short beep on the buzzer
+  if (beepEnable) {
+    for (uint8_t i=0; i<255; i++) {
+      digitalWrite(kBuzzerPin, HIGH);
+      delayMicroseconds(125);
+      digitalWrite(kBuzzerPin, LOW);
+      delayMicroseconds(125);
+    }
+  }
+}

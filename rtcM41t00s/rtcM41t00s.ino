@@ -1,6 +1,7 @@
 /*   Nano Meega board @ 8Mhz , 
 
 */
+#include <avr/sleep.h> 
 #include "RTCm41t00slib.h"
 #include <U8g2lib.h>
 #include <stdint.h>
@@ -23,12 +24,13 @@ IRrecv irrecv(IRPIN);
 decode_results results;
 DateTime nowtime;
 
-volatile bool pressedButton,n,ledstatus, batSmp,tempSmp,nowtimeSmp;
+volatile bool pressedButton,n,batterylow, batSmp,tempSmp,nowtimeSmp;
 static bool buzzstatus = true;
 static bool lightstatus = false;
 static bool chargerstatus = false;
 static bool buttonstatus = true; 
 static bool hoursalarm = false;
+static bool beepEnable = true;
 volatile uint8_t key;
 char daysOfTheWeek[7][10] = {"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
 char dateString[35];
@@ -78,10 +80,11 @@ void setup() {
   adjTimeAlarm();
   EEPROM.get(0x00, alarmtime1);
   key = 0;
-  ledstatus = true;
+//  ledstatus = true;
   batSmp = true;
   tempSmp = false;
   nowtimeSmp = false;
+  batterylow = false;
   irrecv.enableIRIn();
   rtc.printAllBits();
   setBrightness(); 
@@ -105,13 +108,23 @@ void loop() {
    
   if(batSmp)        //battery voltage sensor read 
     {
-      uctmp = analogRead(kBatteryPin); 
-      delay(20);
-      nBatsum += uctmp;
+//      uctmp = analogRead(kBatteryPin); 
+//      delay(20);
+      ADCSRA |= bit (ADEN) | bit (ADIF);
+      ADMUX = bit (REFS0) | bit (REFS1);
+      delay(1);
+      set_sleep_mode (SLEEP_MODE_ADC);
+      sleep_mode();
+      while (bitRead(ADCSRA, ADSC));                         
+      //nBatsum += uctmp;
+      nBatsum += ADC;
+      bitClear (ADCSRA, ADEN);
       cBatSmp++;
       if (cBatSmp >= 4)
           {
             batVal = nBatsum >> 2;
+            if (batVal < 435) batterylow = true;
+            else if (batVal > 450) batterylow = false;
             batVal = map(batVal, 430, 565, 0, 100);
             nBatsum = 0;
             cBatSmp = 0;
@@ -205,3 +218,20 @@ ISR(TIMER2_OVF_vect)
       if (st >= SYSTMMAX) st = 0;
     }
 }
+
+//uint16_t getVCC() {
+//  uint16_t result = 0;
+//  ADCSRA |= bit (ADEN) | bit (ADIF);    // enable ADC, turn off any pending interrupt
+//  // set Vcc measurement against 2.56V reference, at A0 ADC0_pin
+//  ADMUX = bit (REFS0) | bit (REFS1);
+//  delay(1);                             // wait for voltages to settle
+//  set_sleep_mode (SLEEP_MODE_ADC);      // sleep during sample for noise reduction
+//  for (uint8_t i=0; i<16; i++) {        // get 16 readings
+//    sleep_mode();                       // go to sleep while taking ADC sample
+//    while (bitRead(ADCSRA, ADSC));      // make sure sampling is completed
+//    result += ADC;                      // add them up
+//  }
+//  bitClear (ADCSRA, ADEN);              // disable ADC  
+//  result >>= 4;                         // devide by 16
+//  return (1125300L / result);           // 1125300 = 1.1 * 1023 * 1000 
+//}
