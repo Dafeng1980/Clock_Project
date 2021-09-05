@@ -40,7 +40,7 @@ void lcdDisplayAll(){
           u8g2.print(batVal);
           u8g2.print("%");
         }
-//        Serial.print("BATTER_VAL(%):=");
+//        Serial.printf("BATTER_VAL(%):=");
 //        Serial.println(batVal);
       u8g2.setFont(u8g2_font_10x20_tr);
       u8g2.setCursor(0, 32);
@@ -51,7 +51,8 @@ void lcdDisplayAll(){
       u8g2.sendBuffer();
 }
 
- void lcdDisplayA(){      
+ void lcdDisplayA(){
+      goneSeconds = millis() / 1000;       
       u8g2.clearBuffer();
       u8g2.setFontMode(1);
       u8g2.setFont(u8g2_font_6x12_tr);    
@@ -59,19 +60,37 @@ void lcdDisplayAll(){
       u8g2.printf("%s",daysOfTheWeek[nowtime.dayOfTheWeek()]);
       u8g2.setFont(u8g_font_courB24n);
       u8g2.setCursor(0, 32);
-      if(st%2) sprintf(dateString, "%02u:%02u", nowtime.hour(), nowtime.minute());     
+      if(goneSeconds % 2) sprintf(dateString, "%02u:%02u", nowtime.hour(), nowtime.minute());     
          else  sprintf(dateString, "%02u %02u", nowtime.hour(), nowtime.minute());
       u8g2.print(dateString);
       u8g2.sendBuffer();
+      
  }
+
+void lcdDisplayTemp(){
+      u8g2.clearBuffer();
+      u8g2.setFontMode(1);
+      u8g2.setFont(u8g2_font_9x15_tr);    
+      u8g2.setCursor(92, 15);
+      if(batVal >0)
+        {
+          u8g2.print(batVal);
+          u8g2.print("%");
+        }
+      u8g2.setFont(u8g_font_courB24n);
+      u8g2.setCursor(0, 32);
+      u8g2.print(tempVal, 1);
+      u8g2.sendBuffer(); 
+}
 
 float gettemp(){
   uint8_t data[2];
+  byte error;
   float fTemp;
   Wire.beginTransmission(TMP112_ADDR);
   Wire.write(0X00);
-  Wire.endTransmission();
-  delay(30);
+  error = Wire.endTransmission();
+  delay(10);
   Wire.requestFrom(TMP112_ADDR, 2);
   if (Wire.available() == 2) {
     data[0] = Wire.read();
@@ -88,14 +107,12 @@ void sound(){
          tone(kBuzzerPin, 2900);
           delay(30);
            noTone(kBuzzerPin);
-           T2_init();
     }
 
 void halfsound(){
          tone(kBuzzerPin, 2800);
           delay(85);
            noTone(kBuzzerPin);
-           T2_init();
     }
     
 void alarmbuzzer(){
@@ -106,7 +123,7 @@ void alarmbuzzer(){
       delay(5);
       if (digitalRead(kButtonPin) == 0);
       {
-//        key = 0;
+//      key = 0;
         break;
       }
     }
@@ -117,7 +134,6 @@ void alarmbuzzer(){
     delay(80);
 }
   noTone(kBuzzerPin);
-  T2_init();
 }
 
 void PrintTime()
@@ -163,23 +179,6 @@ int8_t read_char()
   return(ui_buffer[0]);
 }
 
-void beep(int bCount,int bDelay)
-  {
- // if (mute) return;
-  for (int i = 0; i<=bCount; i++)
-    {
-      digitalWrite(kBuzzerPin,HIGH);
-      for(int i2=0; i2<bDelay; i2++)
-        {
-          __asm__("nop\n\t"); 
-        }
-          digitalWrite(kBuzzerPin,LOW);
-          for(int i2=0; i2<bDelay; i2++)
-            {
-              __asm__("nop\n\t");
-            }
-      }
-   }
 
 void SetTime()
 {
@@ -267,7 +266,7 @@ void SetAlarmTime(){
   EEPROM.put(0x00, alarmtime1);
 }
 
-void Tmp112_init()
+void tmp112_Init()
    {
       Wire.beginTransmission(TMP112_ADDR);
       Wire.write(0x01);
@@ -285,22 +284,9 @@ void Tmp112_init()
   sleep_enable();
 // sleep_bod_disable();
   sei();
-  sleep_cpu();
-  sleep_disable(); 
- // Serial.println(F("Sleep_disable"));
-  sei();
+  sleep_cpu(); 
+  sleep_disable();    //after run WakeUp();
   ADCSRA |= (1 << ADEN);
-}
-
-void setBrightness(){
-    Wire.beginTransmission(0x3c);
-    Wire.write(0x00);
-    Wire.write(0x81);
-    Wire.endTransmission();
-    Wire.beginTransmission(0x3c);
-    Wire.write(0x00);
-    Wire.write(0x01);
-    Wire.endTransmission();
 }
 
 void setLcdOff()
@@ -313,18 +299,19 @@ void setLcdOff()
     delay(10);
     Wire.beginTransmission(0x3c);
     Wire.endTransmission();
-
   }
 
 void setLcdOn()
    {
     int i2cstatus;
     Wire.beginTransmission(0x3c);
-    i2cstatus=Wire.endTransmission();
+    i2cstatus = Wire.endTransmission();
+    delay(20);
     while(i2cstatus>0)
   {
     Wire.beginTransmission(0x3c);
     i2cstatus=Wire.endTransmission();
+    delay(20);
   }
     Wire.beginTransmission(0x3c);
     Wire.write(0x00);
@@ -335,55 +322,61 @@ void setLcdOn()
 void enterPowerDown(){
       setLcdOff();     
       digitalWrite(kLightPin, LOW);      //trun off LED light
-      digitalWrite(kPowerSwitch, HIGH);   // Power Switch off
+      digitalWrite(kPowerSwitch, HIGH);  // Power Switch off
       while (!digitalRead(kButtonPin)) {};
       key = 0;
-      st = 0;
-      Serial.println(F("Sleep --"));
-      delay(200);
+      delay(20);
       attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, LOW);
       powerdown();
-      T2_init();
-      sound();
-      Serial.println(F("WakeUp--"));
-      setLcdOn();
+      setLcdOn();    
 }
 
 void checkButton(){
-  if ((st >= 300 && nowtime.hour() >= 0 && nowtime.hour() < 8 ) && !chargerstatus) key = 9;     
+  goneMinutes = (millis() - sleepmillis) / 60000;
+  if ((nowtime.hour() >= 8) || chargerstatus) sleepmillis =  millis(); 
+  else if(goneMinutes >= 5) key = 9;
   if (digitalRead(kButtonPin) == 0 && buttonstatus) 
     {
       delay(10);
       if (digitalRead(kButtonPin) == 0);
-        {           
-          key++;
-          sound();
+        {   
+          sound();        
+          key++;          
+//        Serial.printf("key 1 = %02u \n", key);
           buttonstatus = false;
         }
      }
-         cli();
-         nShutT = nSysT;
-         sei(); 
-         while (!digitalRead(kButtonPin)) {
-              uint16_t  nTmp = 0;
-              cli();
-              nTmp = SYSTMMAX + nSysT - nShutT;
-              sei();
-                if(nTmp >= SYSTMMAX)
-                {
-                  nTmp = nTmp - SYSTMMAX;
-                }
-                 if (nTmp >= 1600) {
+    buttonmillis = millis(); 
+  while (!digitalRead(kButtonPin)) {
+       if ((millis() - buttonmillis) >= 3500) {
                   key = 9;
                   break;
-                 }
-                };
-          if (key > 9) key = 0;
-          // delay(10);
+               }
+          }
+              
+  if (batterylow) {                                      // Bettery Raw data less then 450, the unit will be off.    
+    if (((millis() - delaymillis) / 1000) >= 20 ) key = 9;                
+  }
+  else delaymillis = millis();
+  
+  if (key > 9) key = 0;
  }
 
+void lightOn(){
+  if(!lightstatus){
+  analogWrite(kLightPin, Dimmers[dim_data]);
+  lightstatus = true;
+  }
+}
+
+void lightOff(){
+  if(lightstatus){
+  digitalWrite(kLightPin, LOW);
+  lightstatus = false;
+  }
+}
+
 void hoursbuzz(){
-    uint16_t  nTimeTmp = 0;
     if(nowtime.minute() > 30 && buzzstatus) buzzstatus = false;    
     if(nowtime.minute() == 30 && nowtime.hour() > 6 && nowtime.hour() < 23 && buzzstatus )
         {
@@ -393,88 +386,64 @@ void hoursbuzz(){
     if(nowtime.minute() == 0 && nowtime.hour() > 6 && nowtime.hour() < 23 && !buzzstatus ) 
         {
            nhours = nowtime.twelveHour();  //get the number of hours
+           sound();
+           nhours--;
+           alarmtmillis = millis();
            hoursalarm = true;
            buzzstatus = true; 
         }
-    if(hoursalarm) hours_alarm(); 
-}
-
-void hours_alarm(){
-     uint16_t  nTimeTmp = 0;
-        cli();
-        nTimeTmp = SYSTMMAX + nSysT - nProtT;
-        sei();
-          if(nTimeTmp >= SYSTMMAX)
+    if(hoursalarm) {
+          if ((millis() - alarmtmillis) >= 1300)  // per 1300ms  sound 
           {
-            nTimeTmp = nTimeTmp - SYSTMMAX;
-          }
-          if (nTimeTmp >= 650)   // per 2ms * 650 =1.3s  sound 
-          {
+            alarmtmillis = millis();
             sound();
-            nhours--;
-            if(nhours == 0) hoursalarm = false;                              
-            cli();
-            nProtT = nSysT;
-            sei(); 
-          }  
+            nhours--; 
+            Serial.printf("nhours  = %02u \n", nhours);                                        
+          }
+        if(nhours == 0) hoursalarm = false; 
+    }
 }
 
 void detectIR(){
   if (irrecv.decode(&results)) {
-    Serial.println(results.value, HEX);
-
-       switch (results.value) {
-         case 0xA32AB931:
-         case 0x2F502FD:
+     Serial.println(results.value, HEX);
+     
+       switch (results.value) { 
+              
+         case 0xA70:                          //Turn on  LED light, via IR to control by smart Phone, or XiaoMi AI speaker(voice control).
+         case 0x71CBB48C:
               sound();
-//              if (lightstatus)
-//                  {
-//                   digitalWrite(kLightPin, LOW);
-//                   lightstatus = false;
-//                  } else            
-//                        {
-//                         analogWrite(kLightPin, lightvalue);
-//                         lightstatus = true;
-//                        }                       
+              irkey = 0;
+              if (lightstatus)
+                  {
+                   digitalWrite(kLightPin, LOW);
+                   lightstatus = false;
+                  } 
+              else            
+                  {
+                    if (dim_data !=15)
+                          analogWrite(kLightPin, Dimmers[dim_data]);
+                    else 
+                          analogWrite(kLightPin, 255);
+                   lightstatus = true;
+                   }                                             
             break;
 
-         case 0x39D41DC6:
-         case 0x2F522DD:
- //     if(lightstatus){
+         case 0xCD0:
+         case 0xE05CFF73:
           sound();
-//          for (int i = 0; i < 16 ; i++){
-//          if(lightvalue == 255)
-//          lightvalue = 255;
-//          else 
-//          lightvalue++;
-//          delay(10);
-//          analogWrite(kLightPin, lightvalue);
-//             }
-//         }           
+          irkey = 1;                   
            break;
                      
-         case 0xE0984BB6:
-         case 0x2F518E7:
+         case 0x2D0:
+         case 0x51BB112E:
           sound();
-//      if(lightstatus){
-//          for (int i = 0; i < 16 ; i++){
-//            if (lightvalue == 0)
-//            lightvalue = 0;
-//            else
-//            lightvalue--;
-//            delay(10);
-//          analogWrite(kLightPin, lightvalue);
-//             }
-//         }                  
+          irkey = 2;               
             break;
             
          case 0x4EA240AE:
             delay(50);
-            sound();
-//            key++;
-//           if(key > 3)
-//            key = 0;
-//           n = 0;           
+            sound();       
             break;
 
          case 0x4E87E0AB:
@@ -485,18 +454,42 @@ void detectIR(){
          case 0x371A3C86:
             delay(50);
             sound();
-            //DisplayTempHum();
             break;
              
          case 0x143226DB:
             delay(50);
             sound();
-           // DisplayAll();
             break;
          }
    irrecv.resume();
    }  
 }
+
+void lightAdjust()
+   {
+      if (!chargerstatus && batVal < 50){               //External Power or Battery more then 50%, the LED can be light.
+           digitalWrite(kLightPin, LOW);
+           lightstatus = false;
+      }
+      if (lightstatus)
+         {
+            if (irkey > 0 && irkey < 3)
+              {
+                 if (irkey == 2)
+                  {
+                    if (dim_data > 0) dim_data--;
+                   }
+                 else if (irkey == 1)
+                    {
+                    if (dim_data < 15)  dim_data++;
+                    }
+                analogWrite(kLightPin, Dimmers[dim_data]);
+//                Serial.printf("Dimmers[dim_data] = %02u \n", Dimmers[dim_data]);
+                irkey = 0;
+              }
+          }
+       
+    }
 
 void ioInit(){
   pinMode(kButtonPin, INPUT_PULLUP);
@@ -511,13 +504,85 @@ void ioInit(){
   digitalWrite(kLightPin, LOW);
 }
 
-void beep(){       //short beep on the buzzer
-  if (beepEnable) {
-    for (uint8_t i=0; i<255; i++) {
-      digitalWrite(kBuzzerPin, HIGH);
-      delayMicroseconds(125);
-      digitalWrite(kBuzzerPin, LOW);
-      delayMicroseconds(125);
+//void beep1(){       //short beep on the buzzer
+//  if (beepEnable) {
+//    for (uint8_t i=0; i<200; i++) {
+//      digitalWrite(kBuzzerPin, HIGH);
+//      delayMicroseconds(130);
+//      digitalWrite(kBuzzerPin, LOW);
+//      delayMicroseconds(130);
+//    }
+//  }
+//}
+
+//void beep(int bCount,int bDelay)
+//  {
+// // if (mute) return;
+//  for (int i = 0; i<=bCount; i++)
+//    {
+//      digitalWrite(kBuzzerPin,HIGH);
+//      for(int i2=0; i2<bDelay; i2++)
+//        {
+//          __asm__("nop\n\t"); 
+//        }
+//          digitalWrite(kBuzzerPin,LOW);
+//          for(int i2=0; i2<bDelay; i2++)
+//            {
+//              __asm__("nop\n\t");
+//            }
+//      }
+//   }
+
+void getEEPROM() {
+  uint16_t identifier = (EEPROM.read(0) << 8) | EEPROM.read(1);
+  if (identifier == EEPROM_IDENT) {
+     dim_data   =  EEPROM.read(2);
+     lightflag  =  EEPROM.read(3);
+     alarmtime1 = (EEPROM.read(4) << 8) | EEPROM.read(5);
+     alarmtime2 = (EEPROM.read(6) << 8) | EEPROM.read(7);
+  }
+  else {
+    EEPROM.update(0, EEPROM_IDENT >> 8); EEPROM.update(1, EEPROM_IDENT & 0xFF);
+    updateEEPROM();
+  }
+}
+
+void updateEEPROM() {
+  EEPROM.update( 2, dim_data);
+  EEPROM.update( 3, lightflag);
+  EEPROM.update( 4, alarmtime1 >> 8);
+  EEPROM.update( 5, alarmtime1 & 0xFF);
+  EEPROM.update( 6, alarmtime2 >> 8);
+  EEPROM.update( 7, alarmtime2 & 0xFF);
+}
+
+
+void i2cdetects(uint8_t first, uint8_t last) {
+  uint8_t i, address, error;
+  char buff[10];
+  Serial.print("   ");    // table header
+  for (i = 0; i < 16; i++) {
+    Serial.printf("%3x", i);
+  }
+  // table body
+  for (address = 0; address <= 127; address++) {    // addresses 0x00 through 0x77
+    if (address % 16 == 0) {
+      Serial.printf("\n%#02x:", address & 0xF0);
+    }
+    if (address >= first && address <= last) {
+      Wire.beginTransmission(address);
+      error = Wire.endTransmission();
+      delay(5);
+      if (error == 0) {                     // device found       
+        Serial.printf(" %02x", address);
+      } else if (error == 4) {               // other error       
+        Serial.print(" XX");
+      } else {                              // error = 2: received NACK on transmit of address                        
+        Serial.print(" --");               // error = 3: received NACK on transmit of data
+      }
+    } else {      
+      Serial.print("   ");               // address not scanned 
     }
   }
+  Serial.println("\n");
 }
