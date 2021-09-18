@@ -322,9 +322,10 @@ void setLcdOn()
 void enterPowerDown(){
       setLcdOff();     
       digitalWrite(kLightPin, LOW);      //trun off LED light
+      lightstatus = false;
       digitalWrite(kPowerSwitch, HIGH);  // Power Switch off
       while (!digitalRead(kButtonPin)) {};
-      key = 0;
+      EEPROM.update( 3, dim_data);
       delay(20);
       attachInterrupt(digitalPinToInterrupt(kButtonPin), WakeUp, LOW);
       powerdown();
@@ -349,6 +350,7 @@ void checkButton(){
     buttonmillis = millis(); 
   while (!digitalRead(kButtonPin)) {
        if ((millis() - buttonmillis) >= 3500) {
+                  EEPROM.update( 2, key);
                   key = 9;
                   break;
                }
@@ -407,11 +409,12 @@ void hoursbuzz(){
 void detectIR(){
   if (irrecv.decode(&results)) {
      Serial.println(results.value, HEX);
-     
+     delay(30);
        switch (results.value) { 
               
          case 0xA70:                          //Turn on  LED light, via IR to control by smart Phone, or XiaoMi AI speaker(voice control).
-         case 0x71CBB48C:
+         case 0x4EA240AE:
+         
               sound();
               irkey = 0;
               if (lightstatus)
@@ -430,36 +433,23 @@ void detectIR(){
             break;
 
          case 0xCD0:
-         case 0xE05CFF73:
+         case 0x371A3C86:
+         
           sound();
           irkey = 1;                   
            break;
                      
          case 0x2D0:
-         case 0x51BB112E:
+         case 0x143226DB:
           sound();
           irkey = 2;               
             break;
             
-         case 0x4EA240AE:
-            delay(50);
-            sound();       
-            break;
-
          case 0x4E87E0AB:
               delay(50);
               sound();
             break;
 
-         case 0x371A3C86:
-            delay(50);
-            sound();
-            break;
-             
-         case 0x143226DB:
-            delay(50);
-            sound();
-            break;
          }
    irrecv.resume();
    }  
@@ -532,30 +522,6 @@ void ioInit(){
 //            }
 //      }
 //   }
-
-void getEEPROM() {
-  uint16_t identifier = (EEPROM.read(0) << 8) | EEPROM.read(1);
-  if (identifier == EEPROM_IDENT) {
-     dim_data   =  EEPROM.read(2);
-     lightflag  =  EEPROM.read(3);
-     alarmtime1 = (EEPROM.read(4) << 8) | EEPROM.read(5);
-     alarmtime2 = (EEPROM.read(6) << 8) | EEPROM.read(7);
-  }
-  else {
-    EEPROM.update(0, EEPROM_IDENT >> 8); EEPROM.update(1, EEPROM_IDENT & 0xFF);
-    updateEEPROM();
-  }
-}
-
-void updateEEPROM() {
-  EEPROM.update( 2, dim_data);
-  EEPROM.update( 3, lightflag);
-  EEPROM.update( 4, alarmtime1 >> 8);
-  EEPROM.update( 5, alarmtime1 & 0xFF);
-  EEPROM.update( 6, alarmtime2 >> 8);
-  EEPROM.update( 7, alarmtime2 & 0xFF);
-}
-
 
 void i2cdetects(uint8_t first, uint8_t last) {
   uint8_t i, address, error;

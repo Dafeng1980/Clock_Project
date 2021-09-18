@@ -16,7 +16,6 @@
 #define SERIAL_TERMINATOR '\n'
 #define TMP112_ADDR  0x49
 #define IRPIN 21
-#define EEPROM_IDENT 0x55AA
 
 U8G2_SSD1306_128X32_UNIVISION_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 RTC_M41T00S rtc;
@@ -72,11 +71,10 @@ void setup() {
 //  attachInterrupt(EXTERNAL_INT_7, WakeUp, LOW);
 //  rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); 
   adjTimeAlarm();
-  getEEPROM();
+  dim_data = 6;
   key = 0;
   batSmp = true; tempSmp = false; nowtimeSmp = false;
-  buttonstatus = true; lightstatus = false; lightflag = true;
-    
+  buttonstatus = true; lightstatus = false; lightflag = true;   
   rtc.printAllBits();
   i2cdetects(0x03, 0x70);
   irrecv.enableIRIn();
@@ -88,8 +86,11 @@ void loop() {
   if (pressedButton) 
   {
      batSmp = 1;
-     delay(10);
-     key = 0;   
+     key          =  EEPROM.read(2);
+     dim_data     =  EEPROM.read(2);
+    Serial.printf("key  = %02u \n", key);
+    Serial.printf("lightstatus  = %02u \n", lightstatus);
+    delay(50);  
     pressedButton = false;
     buttonstatus  = true;
   }
@@ -147,9 +148,7 @@ void loop() {
                 }
                 key = 0;
             }
-            else if (key == 9) {
-              updateEEPROM();
-              delay(20);
+            else if (key == 9) {             
               enterPowerDown();
             }
             else key = 0;
